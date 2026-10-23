@@ -74,15 +74,13 @@ resource credentialAlert 'Microsoft.Insights/activityLogAlerts@2020-10-01' = if 
     enabled: true
     description: 'A federated credential was created, changed or deleted. Expected when vending runs; anything else is suspicious.'
     scopes: [subscription().id]
+    // Azure requires a plain filter besides the category on a subscription-wide
+    // Administrative alert (an anyOf does not count). Filtering on the resource
+    // type catches writes and deletes; reads are not in the activity log.
     condition: {
       allOf: [
         { field: 'category', equals: 'Administrative' }
-        {
-          anyOf: [
-            { field: 'operationName', equals: 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials/write' }
-            { field: 'operationName', equals: 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials/delete' }
-          ]
-        }
+        { field: 'resourceType', equals: 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials' }
       ]
     }
     actions: {
