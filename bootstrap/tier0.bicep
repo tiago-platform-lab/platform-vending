@@ -26,11 +26,11 @@ targetScope = 'subscription'
 param location string = 'swedencentral'
 param tags object
 
-@description('owner/name of the platform-vending repo.')
-param vendingRepo string
+@description('platform-vending: GitHub OIDC subject prefix of the repo, exactly as GitHub reports it (gh api repos/<owner>/<repo>/actions/oidc/customization/sub --jq .sub_claim_prefix), e.g. repo:org@123/name@456.')
+param vendingSubjectPrefix string
 
-@description('owner/name of the platform-shared repo.')
-param platformSharedRepo string
+@description('platform-shared: GitHub OIDC subject prefix of the repo, exactly as GitHub reports it (gh api repos/<owner>/<repo>/actions/oidc/customization/sub --jq .sub_claim_prefix), e.g. repo:org@123/name@456.')
+param platformSharedSubjectPrefix string
 
 @description('Email for the federated-credential alert. Empty: no alert.')
 param alertEmail string = ''
@@ -118,8 +118,8 @@ module identities 'modules/tier0-identities.bicep' = {
   params: {
     location: location
     tags: tags
-    vendingRepo: vendingRepo
-    platformSharedRepo: platformSharedRepo
+    vendingSubjectPrefix: vendingSubjectPrefix
+    platformSharedSubjectPrefix: platformSharedSubjectPrefix
     alertEmail: alertEmail
   }
 }

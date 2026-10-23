@@ -12,7 +12,7 @@ targetScope = 'resourceGroup'
 
 param appName string
 param env string
-param repo string
+param subjectPrefix string
 param location string
 param tags object
 
@@ -34,7 +34,7 @@ resource deployTrust 'Microsoft.ManagedIdentity/userAssignedIdentities/federated
   name: 'github-${env}'
   properties: {
     issuer: githubIssuer
-    subject: 'repo:${repo}:environment:${env}'
+    subject: '${subjectPrefix}:environment:${env}'
     audiences: audiences
   }
 }
@@ -50,7 +50,7 @@ resource planTrust 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedId
   name: 'github-pull-request'
   properties: {
     issuer: githubIssuer
-    subject: 'repo:${repo}:pull_request'
+    subject: '${subjectPrefix}:pull_request'
     audiences: audiences
   }
 }

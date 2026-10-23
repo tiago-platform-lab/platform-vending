@@ -69,7 +69,7 @@ Azure, as subscription Owner:
 GitHub, as org owner:
 
 1. Create the vending GitHub App on the org (Administration, Variables,
-   Environments, Custom properties: read/write; Members, Contents: read), install
+   Environments, Custom properties: read/write; Members, Contents, Actions: read), install
    it on the org, generate a private key.
 2. In this repo: environment `vending` (required reviewers: the platform team,
    deployment branches: `main`) with variables `VENDING_CLIENT_ID`,
@@ -83,7 +83,8 @@ GitHub, as org owner:
 ## Adding a department (phase 1)
 
 1. Azure: `infra/department.bicep` with the department name, the platform-shared
-   repo, `platformPlanPrincipalId` and the What-If Reader GUID. Outputs the client
+   OIDC subject prefix (`gh api repos/<org>/platform-shared/actions/oidc/customization/sub --jq .sub_claim_prefix`),
+   `platformPlanPrincipalId` and the What-If Reader GUID. Outputs the client
    ID of each environment's deploy identity.
 2. GitHub, in platform-shared: environments `<dept>-dev` and `<dept>-prod`, each
    with variable `AZURE_CLIENT_ID`, deployment branches `main`; on `-prod`,
@@ -131,3 +132,14 @@ with `projects/<name>.yaml`.
 - Retiring a project or a department (deleting a record does nothing).
 - Template updates reaching already vended repos.
 - Rewriting CODEOWNERS of a vended repo with its team.
+
+## OIDC subjects
+
+GitHub may put the repo's numeric IDs in the token subject
+(`repo:<org>@<orgId>/<repo>@<repoId>:...`, the default for new repos) instead
+of plain names. The IDs never change, so a deleted and recreated repo with the
+same name does not inherit the trust. Every federated credential here is built
+from the prefix GitHub reports for the repo
+(`gh api repos/<org>/<repo>/actions/oidc/customization/sub --jq .sub_claim_prefix`),
+so it works with either format. That is why vending creates the app repo first
+and its Azure identities second.

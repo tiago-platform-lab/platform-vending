@@ -6,6 +6,6 @@ param tags = {
   owner: 'tiagomccoutinho@hotmail.com'
   'cost-centre': 'lab'
 }
-param vendingRepo = 'tiago-platform-lab/platform-vending'
-param platformSharedRepo = 'tiago-platform-lab/platform-shared'
+param vendingSubjectPrefix = 'repo:tiago-platform-lab@346922760/platform-vending@1431111786'
+param platformSharedSubjectPrefix = 'repo:tiago-platform-lab@346922760/platform-shared@1431111665'
 param alertEmail = 'tiagomccoutinho@hotmail.com'

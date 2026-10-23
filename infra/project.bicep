@@ -13,8 +13,8 @@ targetScope = 'subscription'
 @maxLength(16)
 param appName string
 
-@description('owner/name of the GitHub repo, e.g. tiago-platform-lab/my-app.')
-param repo string
+@description('GitHub OIDC subject prefix of the repo, exactly as GitHub reports it (gh api repos/<owner>/<repo>/actions/oidc/customization/sub --jq .sub_claim_prefix), e.g. repo:org@123/name@456.')
+param subjectPrefix string
 
 param location string = 'swedencentral'
 param tags object
@@ -51,7 +51,7 @@ module ids 'modules/identities.bicep' = [for e in environments: {
   params: {
     appName: appName
     env: e
-    repo: repo
+    subjectPrefix: subjectPrefix
     location: location
     tags: union(baseTags, { env: e })
     whatIfReaderRoleId: roles.whatIfReader

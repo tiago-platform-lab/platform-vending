@@ -6,7 +6,7 @@ targetScope = 'resourceGroup'
 
 param team string
 param env string
-param platformSharedRepo string
+param platformSharedSubjectPrefix string
 param location string
 param tags object
 
@@ -23,7 +23,7 @@ resource deployTrust 'Microsoft.ManagedIdentity/userAssignedIdentities/federated
   name: 'github-${team}-${env}'
   properties: {
     issuer: 'https://token.actions.githubusercontent.com'
-    subject: 'repo:${platformSharedRepo}:environment:${team}-${env}'
+    subject: '${platformSharedSubjectPrefix}:environment:${team}-${env}'
     audiences: ['api://AzureADTokenExchange']
   }
 }

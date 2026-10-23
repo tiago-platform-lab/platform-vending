@@ -1,8 +1,10 @@
 name: vend-project
 
 # A merged projects/<name>.yaml becomes a project:
-#   1. Azure: project.bicep creates resource groups, identities, OIDC trust, roles
-#   2. GitHub: configure-repo.sh creates the repo from the template and wires it
+#   1. GitHub: create-repo.sh creates the repo from the template. First, because
+#      the identities' OIDC trust names the repo by its ID (immutable subject).
+#   2. Azure: project.bicep creates resource groups, identities, OIDC trust, roles
+#   3. GitHub: configure-repo.sh wires the repo to those identities
 # Every step is safe to re-run; re-running a project changes nothing.
 #
 # Runs as:
@@ -119,19 +121,24 @@ jobs:
           while IFS= read -r f; do
             [ -n "$f" ] || continue
             name=$(yq '.name' "$f")
+            echo "::group::GitHub repo: $name"
+            subject_prefix=$(scripts/create-repo.sh "$f" platform.yaml)
+            echo "OIDC subject prefix: $subject_prefix"
+            echo "::endgroup::"
             echo "::group::Azure: $name"
             # The department's platform (its environment and registry) and the
             # tier-0 role GUIDs come from platform.yaml.
             jq -n \
               --argjson p "$(yq -o=json "$f")" \
               --argjson pl "$(yq -o=json platform.yaml)" \
+              --arg sp "$subject_prefix" \
               '$pl.departments[$p.department] as $d
                | if $d == null then error("unknown department \($p.department)") else . end
                | { "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
                    contentVersion: "1.0.0.0",
                    parameters: {
                      appName:      { value: $p.name },
-                     repo:         { value: $p.repo },
+                     subjectPrefix: { value: $sp },
                      location:     { value: $pl.azure.location },
                      tags:         { value: $p.tags },
                      environments: { value: $p.environments },
@@ -145,7 +152,7 @@ jobs:
               --parameters @params.json \
               --query properties.outputs -o json > outputs.json
             echo "::endgroup::"
-            echo "::group::GitHub: $name"
+            echo "::group::GitHub config: $name"
             scripts/configure-repo.sh "$f" platform.yaml outputs.json
             echo "::endgroup::"
           done <<< "$FILES"

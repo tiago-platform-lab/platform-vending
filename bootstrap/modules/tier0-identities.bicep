@@ -5,8 +5,8 @@ targetScope = 'resourceGroup'
 
 param location string
 param tags object
-param vendingRepo string
-param platformSharedRepo string
+param vendingSubjectPrefix string
+param platformSharedSubjectPrefix string
 param alertEmail string
 
 var githubIssuer = 'https://token.actions.githubusercontent.com'
@@ -24,7 +24,7 @@ resource vendingTrust 'Microsoft.ManagedIdentity/userAssignedIdentities/federate
   name: 'github-vending'
   properties: {
     issuer: githubIssuer
-    subject: 'repo:${vendingRepo}:environment:vending'
+    subject: '${vendingSubjectPrefix}:environment:vending'
     audiences: audiences
   }
 }
@@ -44,7 +44,7 @@ resource planTrust 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedId
   name: 'github-pull-request'
   properties: {
     issuer: githubIssuer
-    subject: 'repo:${platformSharedRepo}:pull_request'
+    subject: '${platformSharedSubjectPrefix}:pull_request'
     audiences: audiences
   }
   // Federated credentials of one identity cannot be written in parallel.

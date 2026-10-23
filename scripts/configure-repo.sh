@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
-# GitHub side of vending for one project. Safe to re-run: every call either
+# Last GitHub step of vending one project: wire the repo (created earlier by
+# create-repo.sh) to its Azure identities. Safe to re-run: every call either
 # creates or overwrites with the same value.
 #
 # Usage: configure-repo.sh <projects/x.yaml> <platform.yaml> <azure-outputs.json>
 # Needs: GH_TOKEN (vending GitHub App), AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
 #
 # The GitHub App needs, on the org: Administration (rw), Variables (rw),
-# Environments (rw), Custom properties (rw), Members (r), Contents (r).
+# Environments (rw), Custom properties (rw), Members (r), Contents (r),
+# Actions (r).
 set -euo pipefail
 
 project=$1
@@ -19,8 +21,6 @@ team=$(yq '.team' "$project")
 approvers=$(yq '.prodApprovers' "$project")
 dept=$(yq '.department' "$project")
 org=$(yq '.github.org' "$platform")
-template=$(yq '.github.template' "$platform")
-visibility=$(yq '.github.visibility // "private"' "$platform")
 
 # The department's slice of platform.yaml.
 pf() { yq ".departments.\"$dept\"$1" "$platform"; }
@@ -28,12 +28,7 @@ pf() { yq ".departments.\"$dept\"$1" "$platform"; }
 
 echo "Configuring $repo (department $dept)"
 
-# 1. Repo from the template. Template files only; settings come below.
-if gh repo view "$repo" > /dev/null 2>&1; then
-  echo "  repo exists"
-else
-  gh repo create "$repo" --template "$template" "--$visibility"
-fi
+# 1. (The repo itself was created by create-repo.sh.)
 
 # 2. Owning team
 gh api -X PUT "orgs/$org/teams/$team/repos/$repo" -f permission=maintain > /dev/null
