@@ -16,6 +16,9 @@ param repo string
 param location string
 param tags object
 
+@description('GUID of the tier-0 "What-If Reader" role.')
+param whatIfReaderRoleId string
+
 var githubIssuer = 'https://token.actions.githubusercontent.com'
 var audiences = ['api://AzureADTokenExchange']
 var managedIdentityOperator = 'f1a07417-d97a-45cb-824c-7a7467783830'
@@ -71,10 +74,10 @@ resource deployAssignsRuntime 'Microsoft.Authorization/roleAssignments@2022-04-0
 
 // Lets what-if resolve the `existing` runtime identity.
 resource planReadsRuntime 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(runtime.id, plan.id, 'reader')
+  name: guid(runtime.id, plan.id, whatIfReaderRoleId)
   scope: runtime
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'acdd72a7-3b82-4ee1-a7d0-1a0f3d5f2d6e')
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', whatIfReaderRoleId)
     principalId: plan.properties.principalId
     principalType: 'ServicePrincipal'
   }

@@ -2,7 +2,8 @@
 //
 //   deploy   Contributor: creates and updates the app's resources. It cannot
 //            grant roles, so a compromised pipeline cannot widen anyone's access.
-//   plan     Reader, for what-if.
+//   plan     What-If Reader (tier-0 custom role): read and what-if, but no
+//            log queries or image pulls, since it runs unreviewed PR code.
 //   runtime  The data roles the app needs, granted here at resource-group scope
 //            so they cover whatever Key Vault or storage account the app's own
 //            Bicep creates later. The group holds only this app's resources.
@@ -16,10 +17,10 @@ param deployPrincipalId string
 param planPrincipalId string
 param runtimePrincipalId string
 
-var roles = {
-  contributor: 'b24988ac-6180-42a0-ab88-20f7382dd24c'
-  reader: 'acdd72a7-3b82-4ee1-a7d0-1a0f3d5f2d6e'
-}
+@description('GUID of the tier-0 "What-If Reader" role.')
+param whatIfReaderRoleId string
+
+var contributorRole = 'b24988ac-6180-42a0-ab88-20f7382dd24c'
 
 var runtimeRoles = [
   '4633458b-17de-408a-b874-0445c86b69e6' // Key Vault Secrets User
@@ -28,21 +29,18 @@ var runtimeRoles = [
 ]
 
 resource deployContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(resourceGroup().id, deployPrincipalId, roles.contributor)
+  name: guid(resourceGroup().id, deployPrincipalId, contributorRole)
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roles.contributor)
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', contributorRole)
     principalId: deployPrincipalId
     principalType: 'ServicePrincipal'
   }
 }
 
-// TODO(verify): Reader may not be enough for `az deployment group what-if`.
-// If it is not, add a small custom role with
-// Microsoft.Resources/deployments/validate/action and .../whatIf/action.
-resource planReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(resourceGroup().id, planPrincipalId, roles.reader)
+resource planWhatIf 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(resourceGroup().id, planPrincipalId, whatIfReaderRoleId)
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roles.reader)
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', whatIfReaderRoleId)
     principalId: planPrincipalId
     principalType: 'ServicePrincipal'
   }

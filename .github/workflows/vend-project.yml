@@ -11,7 +11,7 @@ name: vend-project
 
 on:
   pull_request:
-    paths: ['projects/**', 'infra/**', 'platform.yaml', 'scripts/**']
+    paths: ['projects/**', 'infra/**', 'bootstrap/**', 'platform.yaml', 'scripts/**']
   push:
     branches: [main]
     paths: ['projects/*.yaml']
@@ -34,12 +34,14 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Bicep compiles
         run: |
           az bicep install
-          az bicep lint --file infra/project.bicep
-          az bicep build --file infra/project.bicep --stdout > /dev/null
+          for f in infra/project.bicep infra/department.bicep bootstrap/tier0.bicep; do
+            az bicep lint --file "$f"
+            az bicep build --file "$f" --stdout > /dev/null
+          done
       - name: Project files are well formed
         run: |
           shopt -s nullglob # no projects yet is fine
@@ -62,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: vending # required reviewers on this environment
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -90,14 +92,14 @@ jobs:
 
       # Nothing to vend (e.g. only a non-project file changed): stop here,
       # without logging in anywhere.
-      - uses: azure/login@v2
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         if: steps.which.outputs.files != ''
         with:
           client-id: ${{ vars.VENDING_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         if: steps.which.outputs.files != ''
         id: app-token
         with:
@@ -118,8 +120,8 @@ jobs:
             [ -n "$f" ] || continue
             name=$(yq '.name' "$f")
             echo "::group::Azure: $name"
-            # The department's platform (its environment, joiner role and
-            # registry) comes from platform.yaml.
+            # The department's platform (its environment and registry) and the
+            # tier-0 role GUIDs come from platform.yaml.
             jq -n \
               --argjson p "$(yq -o=json "$f")" \
               --argjson pl "$(yq -o=json platform.yaml)" \
@@ -134,7 +136,8 @@ jobs:
                      tags:         { value: $p.tags },
                      environments: { value: $p.environments },
                      platform:     { value: $d.environments },
-                     registry:     { value: $d.registry } } }' > params.json
+                     registry:     { value: $d.registry },
+                     roles:        { value: $pl.azure.roles } } }' > params.json
             az deployment sub create \
               --name "vend-$name" \
               --location "$(yq '.azure.location' platform.yaml)" \

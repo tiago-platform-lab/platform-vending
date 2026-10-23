@@ -6,23 +6,23 @@ param containerAppsEnvironmentName string
 param deployPrincipalId string
 param planPrincipalId string
 
-var readerRole = 'acdd72a7-3b82-4ee1-a7d0-1a0f3d5f2d6e'
+@description('GUID of the tier-0 "Container Apps Environment Joiner" role.')
+param caeJoinerRoleId string
 
-// The custom "Container Apps Environment Joiner" role of this platform resource
-// group. platform-shared names it guid(resourceGroup().id, 'cae-joiner'), and this
-// module runs in that same resource group, so the GUID is recomputed here instead
-// of being copied by hand into platform.yaml. Keep both expressions in sync.
-var caeJoinerRoleName = guid(resourceGroup().id, 'cae-joiner')
+@description('GUID of the tier-0 "What-If Reader" role.')
+param whatIfReaderRoleId string
 
 resource cae 'Microsoft.App/managedEnvironments@2024-03-01' existing = {
   name: containerAppsEnvironmentName
 }
 
+// One Joiner definition serves every department: it is assigned on this one
+// environment only, so the app cannot join another department's environment.
 resource deployJoin 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(cae.id, deployPrincipalId, caeJoinerRoleName)
+  name: guid(cae.id, deployPrincipalId, caeJoinerRoleId)
   scope: cae
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', caeJoinerRoleName)
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', caeJoinerRoleId)
     principalId: deployPrincipalId
     principalType: 'ServicePrincipal'
   }
@@ -30,10 +30,10 @@ resource deployJoin 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
 
 // what-if resolves the `existing` environment, so the plan identity reads it.
 resource planRead 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(cae.id, planPrincipalId, readerRole)
+  name: guid(cae.id, planPrincipalId, whatIfReaderRoleId)
   scope: cae
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', readerRole)
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', whatIfReaderRoleId)
     principalId: planPrincipalId
     principalType: 'ServicePrincipal'
   }
