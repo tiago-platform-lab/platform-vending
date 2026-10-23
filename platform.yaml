@@ -19,7 +19,8 @@ azure:
     caeJoiner: ae166dd6-747a-401b-b70f-8533acfae304
     whatIfReader: 4b16aabd-f527-4007-9d57-9ce3a5eba870
 
-# Empty until the first department is added. Shape of one entry:
+# One entry per department, added after platform-shared created its base.
+# Shape of one entry:
 #
 #   <dept>:
 #     environments:
@@ -33,4 +34,16 @@ azure:
 #       resourceGroup: rg-<dept>-platform-dev
 #       name: cr<dept>shared
 #       loginServer: cr<dept>shared.azurecr.io
-departments: {}
+departments:
+  aidelivery: # AI Delivery Team
+    environments:
+      dev:
+        resourceGroup: rg-aidelivery-platform-dev
+        containerAppsEnvironmentName: cae-aidelivery-dev
+      prod:
+        resourceGroup: rg-aidelivery-platform-prod
+        containerAppsEnvironmentName: cae-aidelivery-prod
+    registry:
+      resourceGroup: rg-aidelivery-platform-dev
+      name: craideliveryshared
+      loginServer: craideliveryshared.azurecr.io
