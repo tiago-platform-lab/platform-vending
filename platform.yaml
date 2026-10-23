@@ -11,7 +11,8 @@ github:
   visibility: public
 
 azure:
-  location: westeurope
+  # westeurope rejected new subscriptions (capacity) when this was set up.
+  location: swedencentral
   # Custom roles defined once by bootstrap/tier0.bicep (fixed GUIDs, same values
   # there). The vending identity may assign these and nothing outside its list.
   roles:

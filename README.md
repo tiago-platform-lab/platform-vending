@@ -61,8 +61,8 @@ Azure, as subscription Owner:
    `Microsoft.Storage` / `Microsoft.DBforPostgreSQL` when an app needs them.
 2. Review and deploy tier 0:
    ```
-   az deployment sub what-if -l westeurope -f bootstrap/tier0.bicep -p bootstrap/tier0.bicepparam
-   az deployment sub create  -l westeurope -f bootstrap/tier0.bicep -p bootstrap/tier0.bicepparam
+   az deployment sub what-if -l swedencentral -f bootstrap/tier0.bicep -p bootstrap/tier0.bicepparam
+   az deployment sub create  -l swedencentral -f bootstrap/tier0.bicep -p bootstrap/tier0.bicepparam
    ```
    Outputs: `vendingClientId`, `platformPlanClientId`, `platformPlanPrincipalId`.
 

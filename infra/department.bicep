@@ -6,7 +6,7 @@
 //   What-If Reader for id-platform-plan on each rg-<dept>-platform-<env>
 //
 // Phase 1: run by hand, once per department:
-//   az deployment sub create -n dept-<dept> -l westeurope -f infra/department.bicep \
+//   az deployment sub create -n dept-<dept> -l swedencentral -f infra/department.bicep \
 //     -p team=<dept> planPrincipalId=<tier0 output> ...
 // Phase 2: run by vend-project.yml from departments/<dept>.yaml. It only assigns
 // roles from the vending identity's list (Contributor, What-If Reader), so it
@@ -20,7 +20,7 @@ targetScope = 'subscription'
 param team string
 
 param environments array = ['dev', 'prod']
-param location string = 'westeurope'
+param location string = 'swedencentral'
 param tags object
 
 @description('owner/name of the platform-shared repo.')

@@ -1,7 +1,7 @@
 // Tier 0: what everything else stands on. Deployed once, by hand, by someone
 // who is Owner of the subscription (central IT at the company):
 //
-//   az deployment sub create -l westeurope -f bootstrap/tier0.bicep -p bootstrap/tier0.bicepparam
+//   az deployment sub create -l swedencentral -f bootstrap/tier0.bicep -p bootstrap/tier0.bicepparam
 //
 // It creates:
 //   - the two custom roles every department and app uses (fixed GUIDs, also in
@@ -23,7 +23,7 @@
 
 targetScope = 'subscription'
 
-param location string = 'westeurope'
+param location string = 'swedencentral'
 param tags object
 
 @description('owner/name of the platform-vending repo.')

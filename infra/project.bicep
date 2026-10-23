@@ -16,7 +16,7 @@ param appName string
 @description('owner/name of the GitHub repo, e.g. tiago-platform-lab/my-app.')
 param repo string
 
-param location string = 'westeurope'
+param location string = 'swedencentral'
 param tags object
 
 @description('Environments to create, e.g. ["dev", "prod"].')

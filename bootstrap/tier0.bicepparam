@@ -1,6 +1,6 @@
 using './tier0.bicep'
 
-param location = 'westeurope'
+param location = 'swedencentral'
 param tags = {
   project: 'platform'
   owner: 'tiagomccoutinho@hotmail.com'
