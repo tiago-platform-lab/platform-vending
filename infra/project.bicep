@@ -1,0 +1,94 @@
+// Vends one project into Azure:
+//   rg-<app>-identities   the project's identities and their OIDC trust
+//   rg-<app>-<env>        one per environment, where the app's own Bicep deploys
+// plus the project's access to the shared platform layer and registry.
+//
+// Deployed at subscription scope by the vending identity. It writes in several
+// places, so it needs rights in several places (see README "Bootstrap").
+
+targetScope = 'subscription'
+
+@minLength(3)
+@maxLength(16)
+param appName string
+
+@description('owner/name of the GitHub repo, e.g. tiago-platform-lab/my-app.')
+param repo string
+
+param location string = 'westeurope'
+param tags object
+
+@description('Environments to create, e.g. ["dev", "prod"].')
+param environments array = ['dev', 'prod']
+
+@description('Per environment: resourceGroup, containerAppsEnvironmentName. From platform.yaml.')
+param platform object
+
+@description('The one shared registry: resourceGroup, name. From platform.yaml.')
+param registry object
+
+var baseTags = union(tags, { project: appName })
+
+resource identityRg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
+  name: 'rg-${appName}-identities'
+  location: location
+  tags: baseTags
+}
+
+resource envRgs 'Microsoft.Resources/resourceGroups@2024-03-01' = [for e in environments: {
+  name: 'rg-${appName}-${e}'
+  location: location
+  tags: union(baseTags, { env: e })
+}]
+
+module ids 'modules/identities.bicep' = [for e in environments: {
+  name: 'vend-ids-${appName}-${e}'
+  scope: identityRg
+  params: {
+    appName: appName
+    env: e
+    repo: repo
+    location: location
+    tags: union(baseTags, { env: e })
+  }
+}]
+
+module envAccess 'modules/env-access.bicep' = [for (e, i) in environments: {
+  name: 'vend-env-${appName}-${e}'
+  scope: envRgs[i]
+  params: {
+    deployPrincipalId: ids[i].outputs.deployPrincipalId
+    planPrincipalId: ids[i].outputs.planPrincipalId
+    runtimePrincipalId: ids[i].outputs.runtimePrincipalId
+  }
+}]
+
+module platformAccess 'modules/platform-access.bicep' = [for (e, i) in environments: {
+  name: 'vend-platform-${appName}-${e}'
+  scope: resourceGroup(platform[e].resourceGroup)
+  params: {
+    containerAppsEnvironmentName: platform[e].containerAppsEnvironmentName
+    deployPrincipalId: ids[i].outputs.deployPrincipalId
+    planPrincipalId: ids[i].outputs.planPrincipalId
+  }
+}]
+
+module registryAccess 'modules/registry-access.bicep' = [for (e, i) in environments: {
+  name: 'vend-acr-${appName}-${e}'
+  scope: resourceGroup(registry.resourceGroup)
+  params: {
+    registryName: registry.name
+    runtimePrincipalId: ids[i].outputs.runtimePrincipalId
+    deployPrincipalId: ids[i].outputs.deployPrincipalId
+    // Images are built once, in dev, and promoted; only dev may push.
+    grantPush: e == 'dev'
+  }
+}]
+
+output identityResourceGroup string = identityRg.name
+output environments array = [for (e, i) in environments: {
+  env: e
+  resourceGroup: envRgs[i].name
+  deployClientId: ids[i].outputs.deployClientId
+  planClientId: ids[i].outputs.planClientId
+}]

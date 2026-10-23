@@ -1,0 +1,30 @@
+# Where each department's shared platform lives. One entry per department,
+# filled in from platform-shared outputs when the department is added. The
+# joiner role is not listed: platform-access.bicep derives its GUID.
+# A project picks its department with `department:` in projects/<app>.yaml.
+
+github:
+  org: tiago-platform-lab
+  template: tiago-platform-lab/tmpl-webapp-bicep
+  # public: on GitHub Free, environment required reviewers only work on public
+  # repos. Use private on GitHub Enterprise.
+  visibility: public
+
+azure:
+  location: westeurope
+
+# Empty until the first department is added. Shape of one entry:
+#
+#   <dept>:
+#     environments:
+#       dev:
+#         resourceGroup: rg-<dept>-platform-dev
+#         containerAppsEnvironmentName: cae-<dept>-dev
+#       prod:
+#         resourceGroup: rg-<dept>-platform-prod
+#         containerAppsEnvironmentName: cae-<dept>-prod
+#     registry:
+#       resourceGroup: rg-<dept>-platform-dev
+#       name: cr<dept>shared
+#       loginServer: cr<dept>shared.azurecr.io
+departments: {}

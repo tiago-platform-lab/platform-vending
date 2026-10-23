@@ -1,0 +1,148 @@
+name: vend-project
+
+# A merged projects/<name>.yaml becomes a project:
+#   1. Azure: project.bicep creates resource groups, identities, OIDC trust, roles
+#   2. GitHub: configure-repo.sh creates the repo from the template and wires it
+# Every step is safe to re-run; re-running a project changes nothing.
+#
+# Runs as:
+#   Azure   the vending identity (OIDC, trusts environment `vending` only)
+#   GitHub  the vending GitHub App (installation token, org scope)
+
+on:
+  pull_request:
+    paths: ['projects/**', 'infra/**', 'platform.yaml', 'scripts/**']
+  push:
+    branches: [main]
+    paths: ['projects/*.yaml']
+  workflow_dispatch:
+    inputs:
+      project:
+        description: 'Re-run one project, e.g. projects/example-app.yaml'
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: vend
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bicep compiles
+        run: |
+          az bicep install
+          az bicep lint --file infra/project.bicep
+          az bicep build --file infra/project.bicep --stdout > /dev/null
+      - name: Project files are well formed
+        run: |
+          shopt -s nullglob # no projects yet is fine
+          for f in projects/*.yaml; do
+            name=$(yq '.name' "$f")
+            [[ "$name" =~ ^[a-z0-9-]{3,16}$ ]] || { echo "$f: bad name '$name'"; exit 1; }
+            [ "$(basename "$f" .yaml)" = "$name" ] || { echo "$f: file name must match .name"; exit 1; }
+            for k in '.repo' '.department' '.team' '.prodApprovers' '.tags.owner' '.tags["cost-centre"]'; do
+              [ "$(yq "$k" "$f")" != "null" ] || { echo "$f: missing $k"; exit 1; }
+            done
+            dept=$(yq '.department' "$f")
+            [ "$(yq ".departments.\"$dept\"" platform.yaml)" != "null" ] \
+              || { echo "$f: department '$dept' is not in platform.yaml"; exit 1; }
+          done
+      - name: Scripts pass shellcheck
+        run: shellcheck scripts/*.sh
+
+  vend:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment: vending # required reviewers on this environment
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Which projects
+        id: which
+        env:
+          INPUT_PROJECT: ${{ inputs.project }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ -n "$INPUT_PROJECT" ]; then
+            files="$INPUT_PROJECT"
+          elif [ "$BEFORE" = "0000000000000000000000000000000000000000" ] \
+               || ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            # First push of the repo (or a rewritten history): nothing to diff
+            # against. Vend nothing; use Run workflow for each project instead.
+            echo "::warning::No usable base commit; vend projects with Run workflow."
+            files=""
+          else
+            files=$(git diff --name-only --diff-filter=AM "$BEFORE" "$GITHUB_SHA" -- 'projects/*.yaml')
+          fi
+          # Only well-formed project paths go further.
+          files=$(printf '%s\n' "$files" | grep -E '^projects/[a-z0-9-]{3,16}\.yaml$' || true)
+          { echo "files<<EOF"; echo "$files"; echo "EOF"; } >> "$GITHUB_OUTPUT"
+          echo "Projects to vend:"; echo "$files"
+
+      # Nothing to vend (e.g. only a non-project file changed): stop here,
+      # without logging in anywhere.
+      - uses: azure/login@v2
+        if: steps.which.outputs.files != ''
+        with:
+          client-id: ${{ vars.VENDING_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - uses: actions/create-github-app-token@v1
+        if: steps.which.outputs.files != ''
+        id: app-token
+        with:
+          app-id: ${{ vars.VENDING_APP_ID }}
+          private-key: ${{ secrets.VENDING_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Vend
+        if: steps.which.outputs.files != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          FILES: ${{ steps.which.outputs.files }}
+        run: |
+          set -euo pipefail
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            name=$(yq '.name' "$f")
+            echo "::group::Azure: $name"
+            # The department's platform (its environment, joiner role and
+            # registry) comes from platform.yaml.
+            jq -n \
+              --argjson p "$(yq -o=json "$f")" \
+              --argjson pl "$(yq -o=json platform.yaml)" \
+              '$pl.departments[$p.department] as $d
+               | if $d == null then error("unknown department \($p.department)") else . end
+               | { "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+                   contentVersion: "1.0.0.0",
+                   parameters: {
+                     appName:      { value: $p.name },
+                     repo:         { value: $p.repo },
+                     location:     { value: $pl.azure.location },
+                     tags:         { value: $p.tags },
+                     environments: { value: $p.environments },
+                     platform:     { value: $d.environments },
+                     registry:     { value: $d.registry } } }' > params.json
+            az deployment sub create \
+              --name "vend-$name" \
+              --location "$(yq '.azure.location' platform.yaml)" \
+              --template-file infra/project.bicep \
+              --parameters @params.json \
+              --query properties.outputs -o json > outputs.json
+            echo "::endgroup::"
+            echo "::group::GitHub: $name"
+            scripts/configure-repo.sh "$f" platform.yaml outputs.json
+            echo "::endgroup::"
+          done <<< "$FILES"

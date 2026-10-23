@@ -1,0 +1,3 @@
+# Reviewing a projects/*.yaml pull request is the approval step, so this
+# list is who can approve a project.
+* @tiago-platform-lab/platform-team

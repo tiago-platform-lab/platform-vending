@@ -1,0 +1,59 @@
+name: New project
+description: Request a new repo with CI/CD and its Azure environments.
+title: "Vend: <app name>"
+labels: [vending-request]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The platform team turns an approved request into a pull request that adds
+        `projects/<name>.yaml`. Merging that pull request creates the project.
+  - type: input
+    id: name
+    attributes:
+      label: App name
+      description: 3-16 characters, lowercase letters, digits and hyphens. Becomes the repo name.
+      placeholder: invoice-checker
+    validations:
+      required: true
+  - type: input
+    id: department
+    attributes:
+      label: Department
+      description: Its shared platform hosts the app. Must be a key under `departments:` in platform.yaml.
+    validations:
+      required: true
+  - type: input
+    id: team
+    attributes:
+      label: Owning GitHub team
+      placeholder: finance-ai
+    validations:
+      required: true
+  - type: input
+    id: owner
+    attributes:
+      label: Owner email
+    validations:
+      required: true
+  - type: input
+    id: cost-centre
+    attributes:
+      label: Cost centre
+    validations:
+      required: true
+  - type: dropdown
+    id: environments
+    attributes:
+      label: Environments
+      options:
+        - dev and prod
+        - dev only
+    validations:
+      required: true
+  - type: textarea
+    id: purpose
+    attributes:
+      label: What is it for, and what data does it handle?
+    validations:
+      required: true
