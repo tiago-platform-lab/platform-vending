@@ -7,7 +7,7 @@ department: aidelivery            # a key under `departments:` in platform.yaml
 repo: tiago-platform-lab/coffee-ai
 team: ai-delivery-team            # GitHub team slug, gets maintain access
 prodApprovers: ai-delivery-team   # GitHub team slug, required reviewers on prod
-environments: [dev, staging]
+environments: [dev, prod]
 tags:
   dept: aidelivery
   owner: tiagomccoutinho@hotmail.com
