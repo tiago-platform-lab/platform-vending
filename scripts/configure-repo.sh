@@ -8,7 +8,7 @@
 #
 # The GitHub App needs, on the org: Administration (rw), Variables (rw),
 # Environments (rw), Custom properties (rw), Members (r), Contents (r),
-# Actions (r).
+# Actions (rw: reads the OIDC subject prefix, starts the first deploy).
 set -euo pipefail
 
 project=$1
@@ -135,5 +135,17 @@ jq -n \
      {property_name: "vended", value: "true"}]}' |
   gh api -X PATCH "repos/$repo/properties/values" --input - > /dev/null \
   || echo "::warning::custom properties not set on $repo (not defined on the org?)"
+
+# 7. First deploy to dev. The template's initial commit was pushed before the
+#    variables above existed, so its deploy-dev run skipped itself. Run it now,
+#    once: if dev was ever deployed (a re-run of vending), leave it alone.
+if ! gh api "repos/$repo/contents/.github/workflows/deploy-dev.yml" --silent 2>/dev/null; then
+  echo "::warning::$repo has no deploy-dev.yml (older template): first deploy skipped"
+elif [ -n "$(gh run list --repo "$repo" --workflow deploy-dev.yml --status success --limit 1 --json databaseId --jq '.[].databaseId')" ]; then
+  echo "  dev already deployed"
+else
+  gh workflow run deploy-dev.yml --repo "$repo" --ref main
+  echo "  first deploy to dev started"
+fi
 
 echo "  done"
