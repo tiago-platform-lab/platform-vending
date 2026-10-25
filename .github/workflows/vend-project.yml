@@ -13,7 +13,7 @@ name: vend-project
 
 on:
   pull_request:
-    paths: ['projects/**', 'infra/**', 'bootstrap/**', 'platform.yaml', 'scripts/**']
+    paths: ['projects/**', 'infra/**', 'bootstrap/**', 'platform.yaml', 'scripts/**', '.github/workflows/vend-project.yml']
   push:
     branches: [main]
     paths: ['projects/*.yaml']
@@ -44,14 +44,33 @@ jobs:
             az bicep lint --file "$f"
             az bicep build --file "$f" --stdout > /dev/null
           done
+      # Read-only token (validation GitHub App: Members and Metadata, read) so
+      # the pull request can check against GitHub what vending would hit
+      # later. Never the vending App: its key must not reach unreviewed code.
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        id: check-token
+        if: vars.VALIDATE_APP_ID != ''
+        with:
+          app-id: ${{ vars.VALIDATE_APP_ID }}
+          private-key: ${{ secrets.VALIDATE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
       - name: Project files are well formed
-        # Offline checks only: a pull request has no token for the org. The
-        # checks that need GitHub (teams exist, repo free) run in the vend job.
+        # Every record offline; the records this pull request adds or changes
+        # also online (teams exist, repo free). The vend job checks again, as
+        # the last barrier before anything is created.
+        env:
+          GH_TOKEN: ${{ steps.check-token.outputs.token }}
+          BASE: ${{ github.event.pull_request.base.sha }}
         run: |
           shopt -s nullglob # no projects yet is fine
+          git fetch -q --depth=1 origin "$BASE"
+          changed=$(git diff --name-only --diff-filter=AM "$BASE" HEAD -- 'projects/*.yaml')
+          [ -n "$GH_TOKEN" ] || echo "::warning::No validation App token: online checks skipped until vending."
           status=0
           for f in projects/*.yaml; do
-            scripts/validate-project.sh "$f" platform.yaml || status=1
+            mode=""
+            if [ -n "$GH_TOKEN" ] && grep -qx "$f" <<< "$changed"; then mode=--online; fi
+            scripts/validate-project.sh "$f" platform.yaml ${mode:+"$mode"} || status=1
           done
           exit "$status"
       - name: Scripts pass shellcheck

@@ -102,7 +102,8 @@ runs `department.bicep` and configures the platform-shared environments.
 
 1. A team opens an issue with the **New project** form.
 2. The platform team opens a pull request adding `projects/<name>.yaml`. The
-   pull request checks the record offline (`scripts/validate-project.sh`); right
+   pull request checks the record (`scripts/validate-project.sh`), online too for
+   the records it changes (read-only validation App: teams exist, repo free); right
    before vending, the same script checks online that the teams exist and that
    the repo is free (or was made from the template), before anything is created.
    Reviewing it is the approval.
@@ -149,3 +150,12 @@ from the prefix GitHub reports for the repo
 (`gh api repos/<org>/<repo>/actions/oidc/customization/sub --jq .sub_claim_prefix`),
 so it works with either format. That is why vending creates the app repo first
 and its Azure identities second.
+
+## Validation GitHub App
+
+A second, read-only GitHub App (`Members: read`, `Metadata: read`) lets pull
+requests check a record against GitHub before it is merged. Its key is a repo
+secret (`VALIDATE_APP_PRIVATE_KEY`, with variable `VALIDATE_APP_ID`), so it is
+available to pull request runs: a leaked key only reveals which teams and repos
+exist. The vending App's key, which can write, stays in the `vending`
+environment and never reaches pull requests.
