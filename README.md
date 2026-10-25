@@ -106,6 +106,9 @@ runs `department.bicep` and configures the platform-shared environments.
 3. On merge, `vend-project.yml` waits for approval on the `vending` environment,
    then runs `infra/project.bicep` (Azure) and `scripts/configure-repo.sh`
    (GitHub: repo from the template, team access, environments, variables).
+   Environment `dev` accepts `main` and `v*` tags; `prod` accepts `v*` tags only
+   and needs approval. Rulesets make `v*` tags creatable by the owning team only,
+   and immutable.
 4. The new repo's first push to `main` deploys to dev.
 
 Re-running a project changes nothing. To re-run one by hand, use **Run workflow**
