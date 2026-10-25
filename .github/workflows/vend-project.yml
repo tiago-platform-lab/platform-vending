@@ -45,19 +45,15 @@ jobs:
             az bicep build --file "$f" --stdout > /dev/null
           done
       - name: Project files are well formed
+        # Offline checks only: a pull request has no token for the org. The
+        # checks that need GitHub (teams exist, repo free) run in the vend job.
         run: |
           shopt -s nullglob # no projects yet is fine
+          status=0
           for f in projects/*.yaml; do
-            name=$(yq '.name' "$f")
-            [[ "$name" =~ ^[a-z0-9-]{3,16}$ ]] || { echo "$f: bad name '$name'"; exit 1; }
-            [ "$(basename "$f" .yaml)" = "$name" ] || { echo "$f: file name must match .name"; exit 1; }
-            for k in '.repo' '.department' '.team' '.prodApprovers' '.tags.owner' '.tags["cost-centre"]'; do
-              [ "$(yq "$k" "$f")" != "null" ] || { echo "$f: missing $k"; exit 1; }
-            done
-            dept=$(yq '.department' "$f")
-            [ "$(yq ".departments.\"$dept\"" platform.yaml)" != "null" ] \
-              || { echo "$f: department '$dept' is not in platform.yaml"; exit 1; }
+            scripts/validate-project.sh "$f" platform.yaml || status=1
           done
+          exit "$status"
       - name: Scripts pass shellcheck
         run: shellcheck scripts/*.sh
 
@@ -108,6 +104,21 @@ jobs:
           app-id: ${{ vars.VENDING_APP_ID }}
           private-key: ${{ secrets.VENDING_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
+
+      # Every project is checked against GitHub before any of them is vended:
+      # a missing team or a foreign repo stops the run before anything exists.
+      - name: Preflight
+        if: steps.which.outputs.files != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          FILES: ${{ steps.which.outputs.files }}
+        run: |
+          status=0
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            scripts/validate-project.sh "$f" platform.yaml --online || status=1
+          done <<< "$FILES"
+          exit "$status"
 
       - name: Vend
         if: steps.which.outputs.files != ''
