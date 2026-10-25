@@ -5,7 +5,7 @@
 name: coffee-ai                   # 3-16 chars: lowercase letters, digits, hyphens
 department: aidelivery            # a key under `departments:` in platform.yaml
 repo: tiago-platform-lab/coffee-ai
-team: wrong-team                  # GitHub team slug, gets maintain access
+team: wrong-team-2                # GitHub team slug, gets maintain access
 prodApprovers: ai-delivery-team   # GitHub team slug, required reviewers on prod
 environments: [dev, prod]
 tags:
