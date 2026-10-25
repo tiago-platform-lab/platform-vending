@@ -1,0 +1,65 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="style.css"></head><body>
+<svg id="d" width="1400" height="640" viewBox="0 0 1400 640">
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#6b7280"/></marker></defs>
+  <text class="title" x="40" y="44">Setup order: what is manual and what is automatic</text>
+  <text class="sub" x="40" y="70">Manual work happens once (tier 0) or once per department (phase 1). Apps are always a pull request.</text>
+
+  <!-- columns -->
+  <g>
+    <rect class="box t0" x="40" y="100" width="420" height="440"/>
+    <text class="label t0-text" x="60" y="128">A · TIER 0 · ONCE</text>
+    <text class="small" x="60" y="150">by IT / org owner</text>
+    <text class="h" x="60" y="186">Azure (subscription Owner)</text>
+    <text class="small" x="60" y="210">✎ register resource providers</text>
+    <text class="small" x="60" y="232">✎ deploy bootstrap/tier0.bicep:</text>
+    <text class="small" x="80" y="252">custom roles, rg-platform-identities,</text>
+    <text class="small" x="80" y="272">id-vending, id-platform-plan, alert</text>
+    <text class="h" x="60" y="310">GitHub (org owner)</text>
+    <text class="small" x="60" y="334">✎ org, teams, the three repos</text>
+    <text class="small" x="60" y="356">✎ mark tmpl-webapp-bicep as template</text>
+    <text class="small" x="60" y="378">✎ vending App + validation App</text>
+    <text class="small" x="60" y="400">✎ environment vending, variables, secrets</text>
+    <text class="small" x="60" y="422">✎ platform-shared repo variables</text>
+    <text class="small" x="60" y="444">✎ rulesets on main</text>
+    <text class="small" x="60" y="500" style="fill:#9ca3af">Nothing can create the first identity</text>
+    <text class="small" x="60" y="520" style="fill:#9ca3af">with power except a human: this stays manual.</text>
+  </g>
+  <path class="arrow" d="M460 320 H490"/>
+  <g>
+    <rect class="box dept" x="494" y="100" width="420" height="440"/>
+    <text class="label dept-text" x="514" y="128">B · PER DEPARTMENT</text>
+    <text class="small" x="514" y="150">phase 1 today · phase 2: steps 1, 2, 4 by vending</text>
+    <text class="small" x="514" y="190">✎ 1. run infra/department.bicep:</text>
+    <text class="small" x="534" y="210">rg-&lt;dept&gt;-platform-identities,</text>
+    <text class="small" x="534" y="230">rg-&lt;dept&gt;-platform-dev / -prod,</text>
+    <text class="small" x="534" y="250">id-&lt;dept&gt;-platform-dev / -prod + roles</text>
+    <text class="small" x="514" y="282">✎ 2. platform-shared environments</text>
+    <text class="small" x="534" y="302">&lt;dept&gt;-dev / &lt;dept&gt;-prod: AZURE_CLIENT_ID,</text>
+    <text class="small" x="534" y="322">main only, prod reviewers; team access</text>
+    <text class="small" x="514" y="354">⇄ 3. PR in platform-shared: two</text>
+    <text class="small" x="534" y="374">.bicepparam files + CODEOWNERS line</text>
+    <text class="small" x="534" y="394">→ what-if → merge → dev → approve → prod</text>
+    <text class="small" x="514" y="426">⇄ 4. PR in platform-vending: the department</text>
+    <text class="small" x="534" y="446">under departments: in platform.yaml</text>
+  </g>
+  <path class="arrow" d="M914 320 H944"/>
+  <g>
+    <rect class="box app" x="948" y="100" width="412" height="440"/>
+    <text class="label app-text" x="968" y="128">C · PER APP</text>
+    <text class="small" x="968" y="150">always automatic after the gates</text>
+    <text class="small" x="968" y="190">⇄ 1. PR in platform-vending:</text>
+    <text class="small" x="988" y="210">projects/&lt;app&gt;.yaml (validated in the PR)</text>
+    <text class="small" x="968" y="242">✓ 2. review + merge</text>
+    <text class="small" x="968" y="264">✓ 3. approve the vending run</text>
+    <text class="small" x="968" y="296">⚙ 4. vending: repo, Azure, configuration,</text>
+    <text class="small" x="988" y="316">first deploy to dev</text>
+    <text class="small" x="968" y="352">Then, in the app repo:</text>
+    <text class="small" x="968" y="376">⚙ every merge to main → dev</text>
+    <text class="small" x="968" y="398">✓ release vX.Y.Z + approval → prod</text>
+  </g>
+
+  <!-- legend -->
+  <rect class="box neutral" x="40" y="566" width="1320" height="54"/>
+  <text class="small" x="60" y="598">✎ manual step</text><text class="small" x="260" y="598">⇄ pull request (reviewed change in git)</text><text class="small" x="620" y="598">✓ human approval</text><text class="small" x="840" y="598">⚙ automatic</text>
+</svg>
+</body></html>

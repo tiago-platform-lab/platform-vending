@@ -1,0 +1,116 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="style.css"></head><body>
+<svg id="d" width="1400" height="760" viewBox="0 0 1400 760">
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#6b7280"/></marker></defs>
+  <text class="title" x="40" y="44">Vending a new app</text>
+  <text class="sub" x="40" y="70">One reviewed file in platform-vending becomes a running app in dev. Two human gates, everything else automatic.</text>
+
+  <!-- legend -->
+  <rect class="box neutral" x="40" y="92" width="1320" height="44"/>
+  <text class="label" x="60" y="119" style="fill:#6b7280">WHO ACTS</text>
+  <rect x="160" y="106" width="16" height="16" rx="4" fill="#fde68a" stroke="#d97706"/><text class="small" x="184" y="119">human gate</text>
+  <rect x="300" y="106" width="16" height="16" rx="4" fill="#e0e7ff" stroke="#4f46e5"/><text class="small" x="324" y="119">validation GitHub App (read-only)</text>
+  <rect x="580" y="106" width="16" height="16" rx="4" fill="#f6f8fa" stroke="#24292f"/><text class="small" x="604" y="119">vending GitHub App (writes to GitHub)</text>
+  <rect x="890" y="106" width="16" height="16" rx="4" fill="#eff6ff" stroke="#0078d4"/><text class="small" x="914" y="119">id-vending (writes to Azure)</text>
+  <rect x="1130" y="106" width="16" height="16" rx="4" fill="#fff7ed" stroke="#d97706"/><text class="small" x="1154" y="119">the new app's identity</text>
+
+  <!-- row 1 -->
+  <g>
+    <rect class="box neutral" x="40" y="164" width="230" height="150"/>
+    <text class="label" x="58" y="190" style="fill:#6b7280">1 · REQUEST</text>
+    <text class="small" x="58" y="216">PR adding</text>
+    <text class="mono-s" x="58" y="238">projects/&lt;app&gt;.yaml</text>
+    <text class="small" x="58" y="262">name, department, team,</text>
+    <text class="small" x="58" y="282">prod approvers, tags</text>
+  </g>
+  <path class="arrow" d="M270 239 H304"/>
+  <g>
+    <rect class="box t0" x="308" y="164" width="260" height="150"/>
+    <text class="label t0-text" x="326" y="190">2 · VALIDATE (PR CHECK)</text>
+    <text class="small" x="326" y="216">offline: name, repo, envs,</text>
+    <text class="small" x="326" y="236">department, email, tags</text>
+    <text class="small" x="326" y="262">online: teams exist,</text>
+    <text class="small" x="326" y="282">repo name free</text>
+  </g>
+  <path class="arrow" d="M568 239 H602"/>
+  <g>
+    <rect class="box" x="606" y="164" width="200" height="150" style="fill:#fef3c7;stroke:#d97706"/>
+    <text class="label app-text" x="624" y="190">3 · REVIEW + MERGE</text>
+    <text class="small" x="624" y="216">platform team</text>
+    <text class="small" x="624" y="236">(CODEOWNERS)</text>
+    <text class="small" x="624" y="262">reviewing the PR</text>
+    <text class="small" x="624" y="282">is the approval</text>
+  </g>
+  <path class="arrow" d="M806 239 H840"/>
+  <g>
+    <rect class="box" x="844" y="164" width="200" height="150" style="fill:#fef3c7;stroke:#d97706"/>
+    <text class="label app-text" x="862" y="190">4 · APPROVE RUN</text>
+    <text class="small" x="862" y="216">environment</text>
+    <text class="mono-s" x="862" y="238">vending</text>
+    <text class="small" x="862" y="262">required reviewers,</text>
+    <text class="small" x="862" y="282">main only</text>
+  </g>
+  <path class="arrow" d="M1044 239 H1078"/>
+  <g>
+    <rect class="box gh" x="1082" y="164" width="278" height="150"/>
+    <text class="label gh-text" x="1100" y="190">5 · PREFLIGHT</text>
+    <text class="small" x="1100" y="216">same checks, online,</text>
+    <text class="small" x="1100" y="236">with the vending App:</text>
+    <text class="small" x="1100" y="262">stops before anything</text>
+    <text class="small" x="1100" y="282">is created</text>
+  </g>
+
+  <!-- connector to row 2 -->
+  <path class="arrow" d="M1221 314 V352 H155 V384"/>
+
+  <!-- row 2 -->
+  <g>
+    <rect class="box gh" x="40" y="390" width="230" height="200"/>
+    <text class="label gh-text" x="58" y="416">6 · CREATE REPO</text>
+    <text class="mono-s" x="58" y="440">create-repo.sh</text>
+    <text class="small" x="58" y="466">repo from the template</text>
+    <text class="small" x="58" y="492">read its OIDC subject</text>
+    <text class="small" x="58" y="512">prefix (holds the repo's</text>
+    <text class="small" x="58" y="532">numeric ID)</text>
+    <text class="small" x="58" y="566" style="fill:#9ca3af">first, so step 7 knows it</text>
+  </g>
+  <path class="arrow" d="M270 490 H304"/>
+  <g>
+    <rect class="box az" x="308" y="390" width="360" height="200"/>
+    <text class="label az-text" x="326" y="416">7 · AZURE</text>
+    <text class="mono-s" x="326" y="440">infra/project.bicep</text>
+    <text class="small" x="326" y="466">rg-&lt;app&gt;-identities, rg-&lt;app&gt;-dev/-prod</text>
+    <text class="small" x="326" y="488">6 identities (deploy, plan, runtime × env)</text>
+    <text class="small" x="326" y="510">federated credentials (subject prefix)</text>
+    <text class="small" x="326" y="532">all roles: app RGs, Joiner on the</text>
+    <text class="small" x="326" y="552">department environment, registry</text>
+  </g>
+  <path class="arrow" d="M668 490 H702"/>
+  <g>
+    <rect class="box gh" x="706" y="390" width="330" height="200"/>
+    <text class="label gh-text" x="724" y="416">8 · CONFIGURE REPO</text>
+    <text class="mono-s" x="724" y="440">configure-repo.sh</text>
+    <text class="small" x="724" y="466">team access (maintain)</text>
+    <text class="small" x="724" y="488">variables (names, client IDs)</text>
+    <text class="small" x="724" y="510">env dev: main + v* · env prod: v*,</text>
+    <text class="small" x="724" y="530">approval by the prod approvers</text>
+    <text class="small" x="724" y="552">rulesets on v* tags</text>
+  </g>
+  <path class="arrow" d="M1036 490 H1070"/>
+  <g>
+    <rect class="box app" x="1074" y="390" width="286" height="200"/>
+    <text class="label app-text" x="1092" y="416">9 · FIRST DEPLOY</text>
+    <text class="small" x="1092" y="442">vending starts deploy-dev</text>
+    <text class="small" x="1092" y="462">(once, if dev never deployed)</text>
+    <text class="small" x="1092" y="490">azure-login waits for the</text>
+    <text class="small" x="1092" y="510">new roles to propagate</text>
+    <text class="small" x="1092" y="538">placeholder app live in dev</text>
+  </g>
+
+  <!-- footer notes -->
+  <rect class="box neutral" x="40" y="620" width="1320" height="118"/>
+  <text class="label" x="60" y="648" style="fill:#6b7280">GOOD TO KNOW</text>
+  <text class="small" x="60" y="674">· Re-running vending for an existing app changes nothing that is already right (Bicep is idempotent, scripts overwrite with the same values).</text>
+  <text class="small" x="60" y="696">· Vending creates the app's RGs empty: the app's own pipeline fills them (Container App, Key Vault…). Prod stays empty until the first release.</text>
+  <text class="small" x="60" y="718">· Only id-vending assigns roles, and only from a closed list. The app repo can never grant itself more access: it asks through its projects/&lt;app&gt;.yaml.</text>
+</svg>
+</body></html>

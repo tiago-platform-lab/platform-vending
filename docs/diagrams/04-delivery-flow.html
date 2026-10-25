@@ -1,0 +1,91 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="style.css"></head><body>
+<svg id="d" width="1400" height="760" viewBox="0 0 1400 760">
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#6b7280"/></marker></defs>
+  <text class="title" x="40" y="44">From a change to production</text>
+  <text class="sub" x="40" y="70">Every merge reaches dev. Prod only gets versions, and always the exact image that ran in dev.</text>
+
+  <!-- lane labels -->
+  <text class="label" x="40" y="118" style="fill:#6b7280">1 · PULL REQUEST</text>
+  <text class="label" x="40" y="298" style="fill:#6b7280">2 · MERGE TO MAIN</text>
+  <text class="label" x="40" y="478" style="fill:#6b7280">3 · RELEASE vX.Y.Z</text>
+
+  <!-- lane 1 -->
+  <rect class="box gh" x="40" y="132" width="220" height="110"/>
+  <text class="h" x="58" y="162">Open a PR</text>
+  <text class="small" x="58" y="188">app code and/or</text>
+  <text class="small" x="58" y="208">infra/*.bicep</text>
+  <path class="arrow" d="M260 187 H300"/>
+  <rect class="box neutral" x="304" y="132" width="300" height="110"/>
+  <text class="mono" x="322" y="160">ci.yml</text>
+  <text class="small" x="322" y="186">tests, Bicep lint/build,</text>
+  <text class="small" x="322" y="206">image builds · no Azure access</text>
+  <path class="arrow" d="M604 187 H644"/>
+  <rect class="box app" x="648" y="132" width="330" height="110"/>
+  <text class="mono" x="666" y="160">infra-plan.yml · what-if</text>
+  <text class="small" x="666" y="186">as the plan identity (read-only):</text>
+  <text class="small" x="666" y="206">shows what dev and prod would change</text>
+  <path class="arrow" d="M978 187 H1018"/>
+  <rect class="box gh" x="1022" y="132" width="338" height="110"/>
+  <text class="h" x="1040" y="162">Review</text>
+  <text class="small" x="1040" y="188">code owners approve,</text>
+  <text class="small" x="1040" y="208">checks green, merge</text>
+
+  <!-- lane 2 -->
+  <rect class="box gh" x="40" y="312" width="220" height="110"/>
+  <text class="h" x="58" y="342">Push to main</text>
+  <text class="small" x="58" y="368">commit a1b2c3d</text>
+  <path class="arrow" d="M260 367 H300"/>
+  <rect class="box app" x="304" y="312" width="674" height="110"/>
+  <text class="mono" x="322" y="340">deploy-dev.yml · as the dev deploy identity · environment dev</text>
+  <text class="small" x="322" y="366">1. build the image once:  &lt;app&gt;:a1b2c3d  → push to the department registry</text>
+  <text class="small" x="322" y="388">2. az deployment group create  infra/main.bicep + main.dev.bicepparam</text>
+  <text class="small" x="322" y="408">   (Bicep owns the whole app; the image tag is just one parameter)</text>
+  <path class="arrow" d="M978 367 H1018"/>
+  <rect class="box dept" x="1022" y="312" width="338" height="110"/>
+  <text class="h dept-text" x="1040" y="342">dev is live</text>
+  <text class="mono-s" x="1040" y="368">ca-&lt;app&gt;-dev</text>
+  <text class="small" x="1040" y="390">runs &lt;app&gt;:a1b2c3d</text>
+
+  <!-- registry -->
+  <rect class="box az" x="304" y="440" width="674" height="0" style="display:none"/>
+
+  <!-- lane 3 -->
+  <rect class="box gh" x="40" y="492" width="220" height="140"/>
+  <text class="h" x="58" y="522">Publish release</text>
+  <text class="mono-s" x="58" y="548">v1.2.0 on a1b2c3d</text>
+  <text class="small" x="58" y="574">only the owning team</text>
+  <text class="small" x="58" y="594">can create v* tags;</text>
+  <text class="small" x="58" y="614">nobody can move them</text>
+  <path class="arrow" d="M260 562 H300"/>
+  <rect class="box app" x="304" y="492" width="330" height="140"/>
+  <text class="mono" x="322" y="520">release.yml · tag-image</text>
+  <text class="small" x="322" y="544">as the dev identity (registry writer)</text>
+  <text class="small" x="322" y="568">checks: tag is vX.Y.Z, commit is on</text>
+  <text class="small" x="322" y="588">main, &lt;app&gt;:a1b2c3d exists (went to dev)</text>
+  <text class="small" x="322" y="612">adds tag v1.2.0 to the SAME image</text>
+  <path class="arrow" d="M634 562 H674"/>
+  <rect class="box gh" x="678" y="492" width="150" height="140"/>
+  <text class="h" x="696" y="522">Approval</text>
+  <text class="small" x="696" y="548">environment</text>
+  <text class="small" x="696" y="568">prod: the</text>
+  <text class="small" x="696" y="588">team's</text>
+  <text class="small" x="696" y="608">reviewers</text>
+  <path class="arrow" d="M828 562 H868"/>
+  <rect class="box app" x="872" y="492" width="200" height="140"/>
+  <text class="mono" x="890" y="520">release.yml · prod</text>
+  <text class="small" x="890" y="544">as the prod deploy</text>
+  <text class="small" x="890" y="564">identity: Bicep with</text>
+  <text class="small" x="890" y="584">image &lt;app&gt;:v1.2.0</text>
+  <text class="small" x="890" y="608">no rebuild</text>
+  <path class="arrow" d="M1072 562 H1102"/>
+  <rect class="box dept" x="1106" y="492" width="254" height="140"/>
+  <text class="h dept-text" x="1124" y="522">prod is live</text>
+  <text class="mono-s" x="1124" y="548">ca-&lt;app&gt;-prod</text>
+  <text class="small" x="1124" y="570">runs &lt;app&gt;:v1.2.0</text>
+
+  <!-- registry strip -->
+  <rect class="box az" x="40" y="660" width="1320" height="80"/>
+  <text class="label az-text" x="60" y="688">DEPARTMENT REGISTRY  cr&lt;dept&gt;shared</text>
+  <text x="60" y="716">one image, two names:  <tspan class="mono">&lt;app&gt;:a1b2c3d</tspan>  =  <tspan class="mono">&lt;app&gt;:v1.2.0</tspan>   (same digest).  Reusing a version for another image fails.  Rollback = run release on an older tag.</text>
+</svg>
+</body></html>

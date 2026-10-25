@@ -1,0 +1,84 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="style.css"></head><body>
+<svg id="d" width="1400" height="930" viewBox="0 0 1400 930">
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#6b7280"/></marker></defs>
+  <text class="title" x="40" y="44">Where identities live, and why</text>
+  <text class="sub" x="40" y="70">Rule: an identity lives outside every scope it can write to, so it can never change its own trust or roles.</text>
+  <text class="sub" x="40" y="92">Each level is created by a stronger one and can only give less than it has.</text>
+
+  <text class="label" x="40" y="132" style="fill:#6b7280">WHERE THE IDENTITY IS STORED</text>
+  <text class="label" x="800" y="132" style="fill:#6b7280">WHERE IT CAN WRITE</text>
+
+  <!-- tier 0 -->
+  <rect class="box t0" x="40" y="148" width="500" height="150"/>
+  <text class="label t0-text" x="60" y="174">TIER 0 · CREATED BY IT (OWNER), BY HAND</text>
+  <text class="mono" x="60" y="202">rg-platform-identities</text>
+  <rect class="box neutral" x="60" y="216" width="210" height="62" style="fill:#fff"/>
+  <text class="mono" x="74" y="242">id-vending</text>
+  <text class="small" x="74" y="264">env vending only</text>
+  <rect class="box neutral" x="290" y="216" width="230" height="62" style="fill:#fff"/>
+  <text class="mono" x="304" y="242">id-platform-plan</text>
+  <text class="small" x="304" y="264">platform-shared PRs</text>
+
+  <rect class="box az" x="800" y="148" width="560" height="150"/>
+  <text class="h az-text" x="820" y="178">The subscription</text>
+  <text class="small" x="820" y="204">id-vending: Contributor, and may assign only a closed</text>
+  <text class="small" x="820" y="224">list of roles, to service principals only (never Owner,</text>
+  <text class="small" x="820" y="244">User Access Admin or RBAC Admin).</text>
+  <text class="small" x="820" y="272">id-platform-plan: What-If Reader on platform RGs.</text>
+  <path class="arrow" d="M540 230 H792"/>
+  <text class="small" x="560" y="220">writes everywhere</text>
+  <text class="small warn-text" x="560" y="256">accepted risk: same subscription</text>
+  <text class="small warn-text" x="560" y="276">(company: IT management sub)</text>
+
+  <!-- department -->
+  <rect class="box dept" x="40" y="330" width="500" height="150"/>
+  <text class="label dept-text" x="60" y="356">DEPARTMENT · CREATED BY department.bicep</text>
+  <text class="mono" x="60" y="384">rg-&lt;dept&gt;-platform-identities</text>
+  <rect class="box neutral" x="60" y="398" width="460" height="62" style="fill:#fff"/>
+  <text class="mono" x="74" y="424">id-&lt;dept&gt;-platform-dev / -prod</text>
+  <text class="small" x="74" y="446">trust platform-shared, environment &lt;dept&gt;-&lt;env&gt;</text>
+
+  <rect class="box dept" x="800" y="330" width="560" height="150"/>
+  <text class="mono" x="820" y="360">rg-&lt;dept&gt;-platform-dev / -prod</text>
+  <text class="small" x="820" y="388">Contributor here only: builds Log Analytics,</text>
+  <text class="small" x="820" y="408">the Container Apps environment, the registry.</text>
+  <text class="small" x="820" y="436">Cannot grant roles, cannot reach other departments.</text>
+  <path class="arrow" d="M540 428 H792"/>
+  <text class="small" x="560" y="418">Contributor</text>
+
+  <!-- app -->
+  <rect class="box app" x="40" y="512" width="500" height="200"/>
+  <text class="label app-text" x="60" y="538">APP · CREATED BY VENDING (id-vending)</text>
+  <text class="mono" x="60" y="566">rg-&lt;app&gt;-identities</text><text class="small" x="260" y="566">one set per environment (dev, prod)</text>
+  <rect class="box neutral" x="60" y="580" width="140" height="112" style="fill:#fff"/>
+  <text class="mono" x="72" y="606">deploy</text>
+  <text class="small" x="72" y="630">environment</text>
+  <text class="small" x="72" y="650">&lt;env&gt;</text>
+  <rect class="box neutral" x="218" y="580" width="140" height="112" style="fill:#fff"/>
+  <text class="mono" x="230" y="606">plan</text>
+  <text class="small" x="230" y="630">pull_request</text>
+  <rect class="box neutral" x="376" y="580" width="144" height="112" style="fill:#fff"/>
+  <text class="mono" x="388" y="606">runtime</text>
+  <text class="small" x="388" y="630">no trust: Azure</text>
+  <text class="small" x="388" y="650">gives it tokens</text>
+
+  <rect class="box app" x="800" y="512" width="560" height="200"/>
+  <text class="mono" x="820" y="542">rg-&lt;app&gt;-&lt;env&gt;</text>
+  <text class="small" x="820" y="568">deploy: Contributor (+ Joiner on cae-&lt;dept&gt;-&lt;env&gt;,</text>
+  <text class="small" x="820" y="588">AcrPush in dev)</text>
+  <text class="small" x="820" y="614">plan: What-If Reader (read config, run what-if)</text>
+  <text class="small" x="820" y="640">runtime: Key Vault Secrets User, storage data roles</text>
+  <text class="small" x="820" y="660">(+ AcrPull on the registry)</text>
+  <text class="small" x="820" y="690">None of them can grant roles.</text>
+  <path class="arrow" d="M540 612 H792"/>
+  <text class="small" x="560" y="602">roles granted by vending</text>
+
+  <!-- anti-pattern -->
+  <rect class="box warn" x="40" y="750" width="1320" height="150"/>
+  <text class="label warn-text" x="60" y="778">WHY NOT KEEP THE IDENTITY NEXT TO WHAT IT DEPLOYS?</text>
+  <text x="60" y="808">If <tspan class="mono">id-app1-dev-deploy</tspan> lived inside <tspan class="mono">rg-app1-dev</tspan>, its Contributor role there would let it edit itself:</text>
+  <text x="60" y="834">add a federated credential trusting any repo or any pull request, and from then on that code logs in as the deploy identity,</text>
+  <text x="60" y="860">skipping review and approval. Stored one level away, the same identity can deploy the app but cannot touch its own trust.</text>
+  <text class="small" x="60" y="886">Same reason for id-vending: it writes to the whole subscription, so the only truly safe place for it is another subscription.</text>
+</svg>
+</body></html>

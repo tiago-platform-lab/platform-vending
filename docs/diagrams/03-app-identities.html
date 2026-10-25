@@ -1,0 +1,77 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="style.css"></head><body>
+<svg id="d" width="1400" height="780" viewBox="0 0 1400 780">
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#6b7280"/></marker></defs>
+  <text class="title" x="40" y="44">Three identities per app and environment</text>
+  <text class="sub" x="40" y="70">Each one is used by code with a different level of trust, so each gets only what that code needs.</text>
+
+  <!-- column headers: who runs -->
+  <g>
+    <rect class="box gh" x="40" y="100" width="420" height="96"/>
+    <text class="label gh-text" x="60" y="128">USED BY</text>
+    <text class="h" x="60" y="154">A pull request</text>
+    <text class="small" x="60" y="178">code nobody has reviewed yet</text>
+  </g>
+  <g>
+    <rect class="box gh" x="490" y="100" width="420" height="96"/>
+    <text class="label gh-text" x="510" y="128">USED BY</text>
+    <text class="h" x="510" y="154">The deploy job</text>
+    <text class="small" x="510" y="178">reviewed code: merge to main, or approved release</text>
+  </g>
+  <g>
+    <rect class="box gh" x="940" y="100" width="420" height="96" style="fill:#fff7ed;stroke:#d97706"/>
+    <text class="label app-text" x="960" y="128">USED BY</text>
+    <text class="h" x="960" y="154">The running app</text>
+    <text class="small" x="960" y="178">any code inside the container, all the time</text>
+  </g>
+  <path class="arrow" d="M250 196 V226"/><path class="arrow" d="M700 196 V226"/><path class="arrow" d="M1150 196 V226"/>
+
+  <!-- identities -->
+  <g>
+    <rect class="box app" x="40" y="234" width="420" height="300"/>
+    <text class="mono" x="60" y="264" style="font-size:15px;font-weight:700">id-&lt;app&gt;-&lt;env&gt;-plan</text>
+    <text class="label app-text" x="60" y="298">TRUSTS</text>
+    <text class="mono-s" x="60" y="320">repo:&lt;org&gt;/&lt;app&gt;:pull_request</text>
+    <text class="label app-text" x="60" y="356">CAN</text>
+    <text class="small" x="60" y="378">What-If Reader: read configuration</text>
+    <text class="small" x="60" y="398">and preview a deployment (what-if)</text>
+    <text class="label app-text" x="60" y="434">CANNOT</text>
+    <text class="small" x="60" y="456">change anything, query logs,</text>
+    <text class="small" x="60" y="476">pull images, read secrets</text>
+  </g>
+  <g>
+    <rect class="box app" x="490" y="234" width="420" height="300"/>
+    <text class="mono" x="510" y="264" style="font-size:15px;font-weight:700">id-&lt;app&gt;-&lt;env&gt;-deploy</text>
+    <text class="label app-text" x="510" y="298">TRUSTS</text>
+    <text class="mono-s" x="510" y="320">repo:&lt;org&gt;/&lt;app&gt;:environment:&lt;env&gt;</text>
+    <text class="small" x="510" y="342">(environment: main or v* tags, prod approval)</text>
+    <text class="label app-text" x="510" y="378">CAN</text>
+    <text class="small" x="510" y="400">Contributor on rg-&lt;app&gt;-&lt;env&gt;, join the</text>
+    <text class="small" x="510" y="420">department environment, push images (dev)</text>
+    <text class="label app-text" x="510" y="456">CANNOT</text>
+    <text class="small" x="510" y="478">grant roles, edit identities, touch</text>
+    <text class="small" x="510" y="498">other apps or the shared platform</text>
+  </g>
+  <g>
+    <rect class="box app" x="940" y="234" width="420" height="300"/>
+    <text class="mono" x="960" y="264" style="font-size:15px;font-weight:700">id-&lt;app&gt;-&lt;env&gt;-runtime</text>
+    <text class="label app-text" x="960" y="298">TRUSTS</text>
+    <text class="small" x="960" y="320">nothing outside Azure: the platform gives</text>
+    <text class="small" x="960" y="340">the container its tokens</text>
+    <text class="label app-text" x="960" y="378">CAN</text>
+    <text class="small" x="960" y="400">read Key Vault secrets, use storage</text>
+    <text class="small" x="960" y="420">(blobs, queue), pull its image</text>
+    <text class="label app-text" x="960" y="456">CANNOT</text>
+    <text class="small" x="960" y="478">change, create or delete any resource,</text>
+    <text class="small" x="960" y="498">including its own app</text>
+  </g>
+
+  <!-- blast radius -->
+  <rect class="box warn" x="40" y="566" width="1320" height="190"/>
+  <text class="label warn-text" x="60" y="594">IF THERE WERE ONLY ONE IDENTITY</text>
+  <text x="60" y="624"><tspan font-weight="700">plan ≠ deploy:</tspan> a pull request runs the workflow of its own branch, unreviewed. If PRs logged in as an identity</text>
+  <text x="60" y="648">that can write, any PR could change Azure before review. With a read-only plan identity, the worst a PR can do is read.</text>
+  <text x="60" y="682"><tspan font-weight="700">runtime ≠ deploy:</tspan> any code inside the container (a vulnerable library, an injected command) can ask for the app's</text>
+  <text x="60" y="706">token. With its own identity, a compromised app reaches only its own data; with the deploy identity it could delete or</text>
+  <text x="60" y="730">replace the whole app. Identities are free and created by vending, so the only cost is more names.</text>
+</svg>
+</body></html>
