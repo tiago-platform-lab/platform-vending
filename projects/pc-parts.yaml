@@ -1,0 +1,14 @@
+# One file per project: the record of what was vended.
+# Adding a file through a reviewed pull request is the request and the approval;
+# merging it runs vend-project.yml. Re-running changes nothing.
+
+name: pc-parts                     # 3-16 chars: lowercase letters, digits, hyphens
+department: aidelivery            # a key under `departments:` in platform.yaml
+repo: tiago-platform-lab/pc-parts
+team: ai-delivery-team            # GitHub team slug, gets maintain access
+prodApprovers: ai-delivery-team   # GitHub team slug, required reviewers on prod
+environments: [dev, prod]
+tags:
+  dept: aidelivery
+  owner: tiagomccoutinho@hotmail.com
+  cost-centre: "lab"
