@@ -5,6 +5,26 @@ identities, OIDC trust and roles, and its GitHub repo, environments and variable
 It also holds tier 0 (the one-off bootstrap everything else stands on) and the
 per-department Azure preparation.
 
+**How the whole platform works (all three repos, identities, GitHub Apps, setup):
+[docs/README.md](docs/README.md).**
+
+## Layout
+
+```
+projects/<app>.yaml            one record per vended app (source of truth)
+platform.yaml                  org, template, region, tier-0 role GUIDs, each department's platform
+bootstrap/tier0.bicep          tier 0: custom roles, rg-platform-identities, id-vending, id-platform-plan, alert
+infra/department.bicep         prepares one department (identities RG, platform RGs, identities, roles)
+infra/project.bicep            one app's Azure side (RGs, identities, federated credentials, roles)
+infra/modules/                 the pieces of the two files above
+scripts/validate-project.sh    checks a record (offline; --online: teams exist, repo free)
+scripts/create-repo.sh         creates the app repo from the template, prints its OIDC subject prefix
+scripts/configure-repo.sh      team access, environments, variables, tag rulesets, first deploy
+.github/workflows/vend-project.yml   validate (PRs) and vend (merge, after approval)
+.github/ISSUE_TEMPLATE/        the "New project" request form
+docs/                          the platform overview and its diagrams
+```
+
 ## The three layers
 
 | Layer | When | Who runs it | What it creates |
@@ -75,10 +95,13 @@ GitHub, as org owner:
    deployment branches: `main`) with variables `VENDING_CLIENT_ID`,
    `VENDING_APP_ID` and secret `VENDING_APP_PRIVATE_KEY`; repo variables
    `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`.
-3. In platform-shared: repo variables `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`,
+3. Create the validation GitHub App (Members: read, Metadata: read), install it
+   on all repositories, generate a key; in this repo: repo variable
+   `VALIDATE_APP_ID`, repo secret `VALIDATE_APP_PRIVATE_KEY`.
+4. In platform-shared: repo variables `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`,
    `AZURE_PLAN_CLIENT_ID` (= `platformPlanClientId`).
-4. Rulesets on `main` of every repo: pull request required, checks must pass.
-5. Mark `tmpl-webapp-bicep` as a template repository.
+5. Rulesets on `main` of every repo: pull request required, checks must pass.
+6. Mark `tmpl-webapp-bicep` as a template repository.
 
 ## Adding a department (phase 1)
 
@@ -108,8 +131,10 @@ runs `department.bicep` and configures the platform-shared environments.
    the repo is free (or was made from the template), before anything is created.
    Reviewing it is the approval.
 3. On merge, `vend-project.yml` waits for approval on the `vending` environment,
-   then runs `infra/project.bicep` (Azure) and `scripts/configure-repo.sh`
-   (GitHub: repo from the template, team access, environments, variables).
+   runs Preflight (the same checks, online), then:
+   `scripts/create-repo.sh` (repo from the template, and its OIDC subject prefix),
+   `infra/project.bicep` (Azure: RGs, identities with that prefix, roles) and
+   `scripts/configure-repo.sh` (team access, environments, variables, rulesets).
    Environment `dev` accepts `main` and `v*` tags; `prod` accepts `v*` tags only
    and needs approval. Rulesets make `v*` tags creatable by the owning team only,
    and immutable.
@@ -138,6 +163,8 @@ with `projects/<name>.yaml`.
 
 ## Not handled yet
 
+- Departments through vending (phase 2): today `department.bicep` and the
+  platform-shared environments are done by hand.
 - Retiring a project or a department (deleting a record does nothing).
 - Template updates reaching already vended repos.
 - Rewriting CODEOWNERS of a vended repo with its team.

@@ -1,0 +1,101 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="style.css"></head><body>
+<svg id="d" width="1400" height="850" viewBox="0 0 1400 850">
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#6b7280"/></marker></defs>
+  <text class="title" x="40" y="44">Three repos, three moments</text>
+  <text class="sub" x="40" y="68">Each repo runs at its own time and leaves in Azure or GitHub what the next one needs.</text>
+
+  <!-- tier 0 band -->
+  <rect class="box t0" x="40" y="88" width="1320" height="46"/>
+  <text class="label t0-text" x="60" y="116">TIER 0 · ONCE · BY IT</text>
+  <text x="260" y="116">custom roles (Joiner, What-If Reader) · <tspan class="mono">id-vending</tspan> · <tspan class="mono">id-platform-plan</tspan> · in <tspan class="mono">rg-platform-identities</tspan></text>
+
+  <!-- repos -->
+  <g>
+    <rect class="box dept" x="40" y="160" width="400" height="170"/>
+    <text class="label dept-text" x="60" y="188">ONCE PER DEPARTMENT</text>
+    <text class="h" x="60" y="216">platform-shared</text>
+    <text class="small" x="60" y="242">One Bicep file, two parameter files</text>
+    <text class="small" x="60" y="262">per department (dev, prod).</text>
+    <text class="small" x="60" y="290">PR: what-if · merge: deploy dev,</text>
+    <text class="small" x="60" y="310">then prod after approval.</text>
+  </g>
+  <g>
+    <rect class="box t0" x="500" y="160" width="400" height="170"/>
+    <text class="label t0-text" x="520" y="188">ONCE PER APP (AND DEPARTMENT PREP)</text>
+    <text class="h" x="520" y="216">platform-vending</text>
+    <text class="small" x="520" y="242">A reviewed <tspan class="mono-s">projects/&lt;app&gt;.yaml</tspan> becomes</text>
+    <text class="small" x="520" y="262">a repo, resource groups, identities,</text>
+    <text class="small" x="520" y="282">OIDC trust and every role.</text>
+    <text class="small" x="520" y="310">Holds tier 0 and department.bicep.</text>
+  </g>
+  <g>
+    <rect class="box app" x="960" y="160" width="400" height="170"/>
+    <text class="label app-text" x="980" y="188">EVERY CHANGE</text>
+    <text class="h" x="980" y="216">&lt;app&gt; repo (from tmpl-webapp-bicep)</text>
+    <text class="small" x="980" y="242">PR: tests + what-if.</text>
+    <text class="small" x="980" y="262">Merge to main: deploy dev.</text>
+    <text class="small" x="980" y="282">Release vX.Y.Z: deploy prod</text>
+    <text class="small" x="980" y="302">after approval.</text>
+  </g>
+  <path class="arrow" d="M900 214 H952"/>
+  <text class="small" x="906" y="204">creates</text>
+  <path class="arrow-dash" d="M560 330 V352 H320 V338"/>
+  <text class="small" x="330" y="370">reads department names (platform.yaml)</text>
+
+  <!-- azure -->
+  <rect class="box az" x="20" y="412" width="1360" height="420" style="fill:#f8fbff"/>
+  <text class="label az-text" x="40" y="436">AZURE SUBSCRIPTION</text>
+  <g transform="translate(0,26)">
+
+  <g>
+    <rect class="box dept" x="40" y="430" width="400" height="160"/>
+    <text class="mono" x="60" y="458">rg-&lt;dept&gt;-platform-dev / -prod</text>
+    <text class="small" x="60" y="486">Log Analytics  log-&lt;dept&gt;-&lt;env&gt;</text>
+    <text class="small" x="60" y="510">Container Apps environment  cae-&lt;dept&gt;-&lt;env&gt;</text>
+    <text class="small" x="60" y="534">Container registry  cr&lt;dept&gt;shared (dev only)</text>
+    <text class="small" x="60" y="566">shared by every app of the department</text>
+  </g>
+  <g>
+    <rect class="box neutral" x="40" y="610" width="400" height="150"/>
+    <text class="mono" x="60" y="638">rg-&lt;dept&gt;-platform-identities</text>
+    <text class="small" x="60" y="664">id-&lt;dept&gt;-platform-dev / -prod</text>
+    <text class="small" x="60" y="690">created by department.bicep: by hand</text>
+    <text class="small" x="60" y="710">today, by vending in phase 2</text>
+  </g>
+
+  <g>
+    <rect class="box neutral" x="500" y="430" width="400" height="160"/>
+    <text class="mono" x="520" y="458">rg-&lt;app&gt;-identities</text>
+    <text class="small" x="520" y="486">per environment: deploy, plan, runtime</text>
+    <text class="small" x="520" y="510">identities + federated credentials</text>
+    <text class="small" x="520" y="534">+ every role assignment of the app</text>
+    <text class="small" x="520" y="566">created by vending (id-vending)</text>
+  </g>
+  <g>
+    <rect class="box neutral" x="500" y="610" width="400" height="150"/>
+    <text class="mono" x="520" y="638">rg-&lt;app&gt;-dev / rg-&lt;app&gt;-prod</text>
+    <text class="small" x="520" y="664">created EMPTY by vending,</text>
+    <text class="small" x="520" y="688">with the app's roles already on them</text>
+  </g>
+
+  <g>
+    <rect class="box app" x="960" y="610" width="400" height="150"/>
+    <text class="mono" x="980" y="638">inside rg-&lt;app&gt;-&lt;env&gt;</text>
+    <text class="small" x="980" y="664">Container App  ca-&lt;app&gt;-&lt;env&gt;</text>
+    <text class="small" x="980" y="688">Key Vault  kv-&lt;app&gt;-&lt;env&gt;</text>
+    <text class="small" x="980" y="712">(+ storage, worker, Postgres if switched on)</text>
+    <text class="small" x="980" y="740">created by the app's own pipeline</text>
+  </g>
+  <path class="arrow" d="M958 685 H908"/>
+  <text class="small" x="912" y="676">fills</text>
+
+  </g>
+  <!-- repo to azure arrows -->
+  <path class="arrow" d="M240 330 V448"/>
+  <text class="small" x="250" y="402">as id-&lt;dept&gt;-platform-&lt;env&gt;</text>
+  <path class="arrow" d="M700 330 V448"/>
+  <text class="small" x="710" y="402">as id-vending</text>
+  <path class="arrow" d="M1160 330 V628"/>
+  <text class="small" x="1170" y="402">as id-&lt;app&gt;-&lt;env&gt;-deploy</text>
+</svg>
+</body></html>
