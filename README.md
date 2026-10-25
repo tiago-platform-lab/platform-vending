@@ -69,7 +69,7 @@ Azure, as subscription Owner:
 GitHub, as org owner:
 
 1. Create the vending GitHub App on the org (Administration, Variables,
-   Environments, Custom properties: read/write; Members, Contents, Actions: read), install
+   Environments, Custom properties, Actions: read/write; Members, Contents: read), install
    it on the org, generate a private key.
 2. In this repo: environment `vending` (required reviewers: the platform team,
    deployment branches: `main`) with variables `VENDING_CLIENT_ID`,
@@ -113,7 +113,9 @@ runs `department.bicep` and configures the platform-shared environments.
    Environment `dev` accepts `main` and `v*` tags; `prod` accepts `v*` tags only
    and needs approval. Rulesets make `v*` tags creatable by the owning team only,
    and immutable.
-4. The new repo's first push to `main` deploys to dev.
+4. Vending then starts the first `deploy-dev` run, so the placeholder app is up in
+   dev right away (only if dev was never deployed: re-runs do not redeploy).
+   After that, every merge to `main` deploys to dev.
 
 Re-running a project changes nothing. To re-run one by hand, use **Run workflow**
 with `projects/<name>.yaml`.
