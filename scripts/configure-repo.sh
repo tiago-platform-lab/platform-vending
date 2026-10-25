@@ -49,6 +49,24 @@ repo_var TAG_COST_CENTRE "$(yq '.tags["cost-centre"]' "$project")"
 #    exactly `repo:<repo>:environment:<env>`, so these names must match.
 approvers_id=$(gh api "orgs/$org/teams/$approvers" --jq .id)
 
+# Make the refs that may deploy to an environment exactly the given list, e.g.
+# `branch:main tag:v*`. Refs no longer wanted are removed, so re-running an
+# older project brings it up to date.
+set_deploy_refs() {
+  local env=$1; shift
+  local want=" $* " id type name ref
+  while IFS=$'\t' read -r id type name; do
+    [[ "$want" == *" $type:$name "* ]] \
+      || gh api -X DELETE "repos/$repo/environments/$env/deployment-branch-policies/$id" > /dev/null
+  done < <(gh api "repos/$repo/environments/$env/deployment-branch-policies" \
+             --jq '.branch_policies[] | [.id, (.type // "branch"), .name] | @tsv')
+  for ref in "$@"; do
+    # Fails harmlessly if the policy already exists.
+    gh api -X POST "repos/$repo/environments/$env/deployment-branch-policies" \
+      -f type="${ref%%:*}" -f name="${ref#*:}" > /dev/null 2>&1 || true
+  done
+}
+
 while IFS= read -r row; do
   env=$(jq -r '.env' <<< "$row")
   upper=${env^^}
@@ -63,8 +81,14 @@ while IFS= read -r row; do
   jq -n --argjson r "$reviewers" \
     '{reviewers: $r, deployment_branch_policy: {protected_branches: false, custom_branch_policies: true}}' |
     gh api -X PUT "repos/$repo/environments/$env" --input - > /dev/null
-  # Only main may deploy. Fails harmlessly if the policy already exists.
-  gh api -X POST "repos/$repo/environments/$env/deployment-branch-policies" -f name=main > /dev/null 2>&1 || true
+  # dev: every merge to main, plus release tags (release.yml names the image
+  # with the version as the dev identity, the only one that can write to the
+  # registry). prod: release tags only, so prod only ever gets a version.
+  if [ "$env" = "prod" ]; then
+    set_deploy_refs "$env" 'tag:v*'
+  else
+    set_deploy_refs "$env" 'branch:main' 'tag:v*'
+  fi
 
   env_var() { gh variable set "$1" --repo "$repo" --env "$env" --body "$2"; }
   env_var AZURE_CLIENT_ID "$(jq -r '.deployClientId' <<< "$row")"
@@ -79,7 +103,28 @@ while IFS= read -r row; do
   repo_var "CAE_NAME_$upper" "$cae"
 done < <(jq -c '.environments.value[]' "$outputs")
 
-# 5. Custom properties, defined once at org level (see README "Bootstrap").
+# 5. Release tags v*: only the owning team may create them, and nobody may move
+#    or delete them, so a version always means the same commit and image.
+team_id=$(gh api "orgs/$org/teams/$team" --jq .id)
+ruleset() { # <name>, ruleset JSON on stdin; creates it or updates it in place
+  local id
+  id=$(gh api "repos/$repo/rulesets" --jq ".[] | select(.name == \"$1\") | .id")
+  if [ -n "$id" ]; then
+    gh api -X PUT "repos/$repo/rulesets/$id" --input - > /dev/null
+  else
+    gh api -X POST "repos/$repo/rulesets" --input - > /dev/null
+  fi
+}
+tags='{ref_name: {include: ["refs/tags/v*"], exclude: []}}'
+jq -n "{name: \"release-tags-immutable\", target: \"tag\", enforcement: \"active\",
+        conditions: $tags, rules: [{type: \"update\"}, {type: \"deletion\"}]}" |
+  ruleset release-tags-immutable
+jq -n --argjson team "$team_id" "{name: \"release-tags-creators\", target: \"tag\", enforcement: \"active\",
+        bypass_actors: [{actor_id: \$team, actor_type: \"Team\", bypass_mode: \"always\"}],
+        conditions: $tags, rules: [{type: \"creation\"}]}" |
+  ruleset release-tags-creators
+
+# 6. Custom properties, defined once at org level (see README "Bootstrap").
 #    Optional: an org without them defined (e.g. a test org) only gets a warning.
 jq -n \
   --arg owner "$(yq '.tags.owner' "$project")" \
