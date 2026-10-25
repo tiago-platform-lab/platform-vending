@@ -13,7 +13,7 @@ name: vend-project
 
 on:
   pull_request:
-    paths: ['projects/**', 'infra/**', 'bootstrap/**', 'platform.yaml', 'scripts/**']
+    paths: ['projects/**', 'infra/**', 'bootstrap/**', 'platform.yaml', 'scripts/**', '.github/workflows/vend-project.yml']
   push:
     branches: [main]
     paths: ['projects/*.yaml']
