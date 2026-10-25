@@ -101,7 +101,10 @@ runs `department.bicep` and configures the platform-shared environments.
 ## Vending a project
 
 1. A team opens an issue with the **New project** form.
-2. The platform team opens a pull request adding `projects/<name>.yaml`.
+2. The platform team opens a pull request adding `projects/<name>.yaml`. The
+   pull request checks the record offline (`scripts/validate-project.sh`); right
+   before vending, the same script checks online that the teams exist and that
+   the repo is free (or was made from the template), before anything is created.
    Reviewing it is the approval.
 3. On merge, `vend-project.yml` waits for approval on the `vending` environment,
    then runs `infra/project.bicep` (Azure) and `scripts/configure-repo.sh`
