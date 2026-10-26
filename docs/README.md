@@ -209,7 +209,7 @@ the only secrets in the whole setup.
 
 | App | Permissions | Key stored in | Used by | Why it exists |
 |---|---|---|---|---|
-| **tiago-platform-vending** | Repository: Administration, Variables, Environments, Custom properties, Actions (read/write); Contents (read). Organization: Members (read) | Secret of the `vending` environment of platform-vending (approval, `main` only) | The vend job | Create the app repo from the template, give the team access, create environments, variables, rulesets, start the first deploy. The workflow's own `GITHUB_TOKEN` only reaches its own repo. |
+| **tiago-platform-vending** | Repository: Administration, Variables, Environments, Custom properties, Actions, Contents (read/write). Organization: Members (read) | Secret of the `vending` environment of platform-vending (approval, `main` only) | The vend job | Create the app repo from the template, give the team access, create environments, variables, rulesets, write CODEOWNERS, start the first deploy. The workflow's own `GITHUB_TOKEN` only reaches its own repo. |
 | **tiago-platform-vending-check** | Organization: Members (read); Repository: Metadata (read) | Repo secret of platform-vending, available to pull requests | The `validate` job of pull requests | Check a request against GitHub before merge: the teams exist, the repo name is free. |
 
 Why two apps: pull requests run unreviewed code, so they must never get the key
@@ -364,8 +364,8 @@ Phase 1 (today): steps 1, 2 and 4 by hand. Phase 2 moves them into vending.
    tags: { dept: aidelivery, owner: someone@example.com, cost-centre: "1234" }
    ```
 2. Review and merge; approve the run on the `vending` environment.
-3. Done: the repo exists, dev runs the placeholder app. The team replaces `app/`,
-   adjusts `infra/main.<env>.bicepparam`, sets its CODEOWNERS, and releases
+3. Done: the repo exists with CODEOWNERS set to the team, dev runs the placeholder
+   app. The team replaces `app/`, adjusts `infra/main.<env>.bicepparam`, and releases
    `v1.0.0` when ready for prod.
 
 ## 8. Security model
@@ -417,7 +417,6 @@ Accepted risks (test setup):
   (Copier).
 - **Rulesets on `main`** of every repo, so red checks and missing reviews block
   merges.
-- **CODEOWNERS written by vending** (needs Contents write on the vending App).
 - **Registry scoped per app** (repository permissions or deploy by digest).
 - **Retiring an app or department** is not automated.
 - **Entra app registrations** (user sign-in, Graph or Dynamics APIs) are outside

@@ -19,7 +19,7 @@ infra/project.bicep            one app's Azure side (RGs, identities, federated 
 infra/modules/                 the pieces of the two files above
 scripts/validate-project.sh    checks a record (offline; --online: teams exist, repo free)
 scripts/create-repo.sh         creates the app repo from the template, prints its OIDC subject prefix
-scripts/configure-repo.sh      team access, environments, variables, tag rulesets, first deploy
+scripts/configure-repo.sh      team access, environments, variables, tag rulesets, CODEOWNERS, first deploy
 .github/workflows/vend-project.yml   validate (PRs) and vend (merge, after approval)
 .github/ISSUE_TEMPLATE/        the "New project" request form
 docs/                          the platform overview and its diagrams
@@ -89,7 +89,7 @@ Azure, as subscription Owner:
 GitHub, as org owner:
 
 1. Create the vending GitHub App on the org (Administration, Variables,
-   Environments, Custom properties, Actions: read/write; Members, Contents: read), install
+   Environments, Custom properties, Actions, Contents: read/write; Members: read), install
    it on the org, generate a private key.
 2. In this repo: environment `vending` (required reviewers: the platform team,
    deployment branches: `main`) with variables `VENDING_CLIENT_ID`,
@@ -134,7 +134,8 @@ runs `department.bicep` and configures the platform-shared environments.
    runs Preflight (the same checks, online), then:
    `scripts/create-repo.sh` (repo from the template, and its OIDC subject prefix),
    `infra/project.bicep` (Azure: RGs, identities with that prefix, roles) and
-   `scripts/configure-repo.sh` (team access, environments, variables, rulesets).
+   `scripts/configure-repo.sh` (team access, environments, variables, rulesets,
+   CODEOWNERS with the owning team).
    Environment `dev` accepts `main` and `v*` tags; `prod` accepts `v*` tags only
    and needs approval. Rulesets make `v*` tags creatable by the owning team only,
    and immutable.
@@ -167,7 +168,6 @@ with `projects/<name>.yaml`.
   platform-shared environments are done by hand.
 - Retiring a project or a department (deleting a record does nothing).
 - Template updates reaching already vended repos.
-- Rewriting CODEOWNERS of a vended repo with its team.
 
 ## OIDC subjects
 

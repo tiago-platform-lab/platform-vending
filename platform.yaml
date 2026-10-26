@@ -9,6 +9,8 @@ github:
   # public: on GitHub Free, environment required reviewers only work on public
   # repos. Use private on GitHub Enterprise.
   visibility: public
+  # Reviews infra/ of every vended repo (CODEOWNERS written by vending).
+  platformTeam: platform-team
 
 azure:
   # westeurope rejected new subscriptions (capacity) when this was set up.
