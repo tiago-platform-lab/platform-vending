@@ -7,7 +7,7 @@
 # Needs: GH_TOKEN (vending GitHub App), AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
 #
 # The GitHub App needs, on the org: Administration (rw), Variables (rw),
-# Environments (rw), Custom properties (rw), Members (r), Contents (r),
+# Environments (rw), Custom properties (rw), Members (r), Contents (rw: CODEOWNERS),
 # Actions (rw: reads the OIDC subject prefix, starts the first deploy).
 set -euo pipefail
 
@@ -136,10 +136,40 @@ jq -n \
   gh api -X PATCH "repos/$repo/properties/values" --input - > /dev/null \
   || echo "::warning::custom properties not set on $repo (not defined on the org?)"
 
-# 7. First deploy to dev. The template's initial commit was pushed before the
+# 7. CODEOWNERS: the owning team reviews everything, the platform team also
+#    reviews infra/. The template only has a placeholder. Written only when it
+#    differs, so re-running vending adds no commits (and fixes older repos).
+platform_team=$(yq '.github.platformTeam' "$platform")
+desired=$(printf '%s\n' \
+  "# Written by vending from projects/$name.yaml: the owning team reviews" \
+  "# everything, the platform team also reviews infra/." \
+  "* @$org/$team" \
+  "/infra/ @$org/$team @$org/$platform_team")
+current=""
+current_sha=""
+if meta=$(gh api "repos/$repo/contents/.github/CODEOWNERS" 2>/dev/null); then
+  current_sha=$(jq -r .sha <<< "$meta")
+  current=$(jq -r .content <<< "$meta" | base64 -d)
+fi
+codeowners_pushed=0
+if [ "$current" != "$desired" ]; then
+  args=(-f "message=CODEOWNERS: $team (set by vending)" -f branch=main
+        -f "content=$(printf '%s\n' "$desired" | base64 -w0)")
+  [ -n "$current_sha" ] && args+=(-f "sha=$current_sha")
+  gh api -X PUT "repos/$repo/contents/.github/CODEOWNERS" "${args[@]}" > /dev/null
+  codeowners_pushed=1
+  echo "  CODEOWNERS set to $team"
+else
+  echo "  CODEOWNERS already set"
+fi
+
+# 8. First deploy to dev. The template's initial commit was pushed before the
 #    variables above existed, so its deploy-dev run skipped itself. Run it now,
-#    once: if dev was ever deployed (a re-run of vending), leave it alone.
-if ! gh api "repos/$repo/contents/.github/workflows/deploy-dev.yml" --silent 2>/dev/null; then
+#    once: if dev was ever deployed (a re-run of vending), leave it alone. A
+#    CODEOWNERS commit above is a push to main and already starts deploy-dev.
+if [ "$codeowners_pushed" = 1 ]; then
+  echo "  deploy-dev started by the CODEOWNERS commit"
+elif ! gh api "repos/$repo/contents/.github/workflows/deploy-dev.yml" --silent 2>/dev/null; then
   echo "::warning::$repo has no deploy-dev.yml (older template): first deploy skipped"
 elif [ -n "$(gh run list --repo "$repo" --workflow deploy-dev.yml --status success --limit 1 --json databaseId --jq '.[].databaseId')" ]; then
   echo "  dev already deployed"
