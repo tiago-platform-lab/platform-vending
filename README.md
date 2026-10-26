@@ -56,8 +56,8 @@ the platform identities in `rg-platform-identities`.
 | `id-platform-plan` | `platform-shared`, `pull_request` | What-If Reader on every department's platform RGs |
 | `id-<dept>-platform-<env>` | `platform-shared`, environment `<dept>-<env>` | Contributor on `rg-<dept>-platform-<env>` |
 | `id-<app>-<env>-plan` | app repo, `pull_request` | What-If Reader on the app's RG, environment and runtime identity |
-| `id-<app>-<env>-deploy` | app repo, environment `<env>` | Contributor on `rg-<app>-<env>`, Joiner on its department's environment, AcrPush (dev only) |
-| `id-<app>-<env>-runtime` | none (Azure-issued) | AcrPull; Key Vault Secrets User and storage data roles on `rg-<app>-<env>` |
+| `id-<app>-<env>-deploy` | app repo, environment `<env>` | Contributor on `rg-<app>-<env>`, Joiner on its department's environment, Repository Writer on `<registry>/<app>` (dev only) |
+| `id-<app>-<env>-runtime` | none (Azure-issued) | Repository Reader on `<registry>/<app>`; Key Vault Secrets User and storage data roles on `rg-<app>-<env>` |
 
 Custom roles (tier 0, fixed GUIDs, also in `platform.yaml`):
 
@@ -158,9 +158,10 @@ with `projects/<name>.yaml`.
   stolen token could still give some service principal Contributor. It cannot
   give anyone the right to grant roles, and cannot edit the custom roles
   (Contributor excludes `Microsoft.Authorization/*/write`).
-- Open: every app's dev deploy identity has AcrPush on the whole department
-  registry, so it could overwrite another app's image tags. Fix later with
-  repository-scoped permissions or deploying by digest.
+- Registry access is per repository: the department registry runs in ABAC mode
+  and each app's identities get Container Registry Repository Reader/Writer with
+  a condition on their own repository, so an app cannot read or overwrite another
+  app's images.
 
 ## Not handled yet
 

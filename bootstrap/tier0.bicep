@@ -45,6 +45,9 @@ var builtIn = {
   managedIdentityOperator: 'f1a07417-d97a-45cb-824c-7a7467783830'
   acrPull: '7f951dda-4ed3-4680-a7ca-43fe172d538d'
   acrPush: '8311e382-0749-4cb8-b61a-304f252e45ec'
+  // ABAC-enabled registry roles, scoped to one repository by a condition.
+  repositoryReader: 'b93aa761-3e63-49ed-ac28-beffa264f7ac'
+  repositoryWriter: '2a1e307c-b015-4ebd-883e-5b7698a07328'
   keyVaultSecretsUser: '4633458b-17de-408a-b874-0445c86b69e6'
   storageBlobDataContributor: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
   storageQueueDataContributor: '974c5e8b-45b9-4653-ba55-5f855dd0fb88'
@@ -141,8 +144,10 @@ resource vendingContributor 'Microsoft.Authorization/roleAssignments@2022-04-01'
 var assignable = join([
   builtIn.contributor
   builtIn.managedIdentityOperator
-  builtIn.acrPull
-  builtIn.acrPush
+  builtIn.acrPull // legacy registry mode; remove once every registry is ABAC
+  builtIn.acrPush // legacy registry mode; remove once every registry is ABAC
+  builtIn.repositoryReader
+  builtIn.repositoryWriter
   builtIn.keyVaultSecretsUser
   builtIn.storageBlobDataContributor
   builtIn.storageQueueDataContributor

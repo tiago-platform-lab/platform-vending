@@ -120,8 +120,8 @@ IT (Owner)                 creates tier 0
 | Identity | Used by | Trusts (OIDC subject) | Can |
 |---|---|---|---|
 | `id-<app>-<env>-plan` | Pull requests (what-if) | the app repo, `pull_request` | What-If Reader: read configuration, preview a deployment |
-| `id-<app>-<env>-deploy` | `deploy-dev.yml`, `release.yml` | the app repo, `environment:<env>` | Contributor on `rg-<app>-<env>`, Joiner on the department environment, AcrPush (dev only), attach the runtime identity |
-| `id-<app>-<env>-runtime` | The running Container App | nothing outside Azure | AcrPull; Key Vault Secrets User, Storage Blob and Queue Data Contributor on `rg-<app>-<env>` |
+| `id-<app>-<env>-deploy` | `deploy-dev.yml`, `release.yml` | the app repo, `environment:<env>` | Contributor on `rg-<app>-<env>`, Joiner on the department environment, Repository Writer on its own image repository (dev only), attach the runtime identity |
+| `id-<app>-<env>-runtime` | The running Container App | nothing outside Azure | Repository Reader on its own image repository; Key Vault Secrets User, Storage Blob and Queue Data Contributor on `rg-<app>-<env>` |
 
 Why not one identity:
 
@@ -152,8 +152,10 @@ request of platform-shared presents the same OIDC subject, so one identity per
 department would not isolate anything.
 
 The roles `id-vending` may assign: Contributor, Managed Identity Operator,
-AcrPull, AcrPush, Key Vault Secrets User, Storage Blob Data Contributor, Storage
-Queue Data Contributor, Container Apps Environment Joiner, What-If Reader. Never
+Container Registry Repository Reader and Writer (plus AcrPull and AcrPush while a
+registry is still in legacy mode), Key Vault Secrets User, Storage Blob Data
+Contributor, Storage Queue Data Contributor, Container Apps Environment Joiner,
+What-If Reader. Never
 Owner, User Access Administrator or RBAC Administrator, so nothing it creates can
 grant roles in turn.
 
@@ -376,6 +378,7 @@ Phase 1 (today): steps 1, 2 and 4 by hand. Phase 2 moves them into vending.
 | A pipeline widens its own access | No pipeline identity can grant roles except `id-vending`, from a closed list; identities live outside the scopes they write to |
 | One department touches another | Department identities are Contributor on their own RG only; the Joiner role is assigned per environment; CODEOWNERS and per-department environments in platform-shared |
 | A compromised app destroys infrastructure | The runtime identity only has data roles on its own RG |
+| One app reads or replaces another app's images | Registries run in ABAC mode: each app's identities get the repository roles with a condition on their own repository (`<registry>/<app>`); AcrPull/AcrPush are not honoured |
 | A compromised third-party action steals a token | Every action pinned by commit SHA; Dependabot proposes updates |
 | Someone changes who an identity trusts | Email alert on any federated credential write or delete |
 | A repo is recreated with the same name to inherit trust | OIDC subjects with numeric org and repo IDs |
@@ -391,8 +394,6 @@ Accepted risks (test setup):
 - `id-vending` can assign Contributor anywhere in the subscription (needed for
   every deploy identity), so a stolen token could create a Contributor backdoor,
   but never one that can grant roles.
-- Every app's dev deploy identity has AcrPush on the whole department registry
-  and could overwrite another app's image tags.
 
 ## 9. Day-to-day operations
 
@@ -417,7 +418,6 @@ Accepted risks (test setup):
   (Copier).
 - **Rulesets on `main`** of every repo, so red checks and missing reviews block
   merges.
-- **Registry scoped per app** (repository permissions or deploy by digest).
 - **Retiring an app or department** is not automated.
 - **Entra app registrations** (user sign-in, Graph or Dynamics APIs) are outside
   Bicep: they need Graph permissions no pipeline has.
