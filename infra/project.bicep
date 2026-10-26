@@ -86,6 +86,7 @@ module registryAccess 'modules/registry-access.bicep' = [for (e, i) in environme
   scope: resourceGroup(registry.resourceGroup)
   params: {
     registryName: registry.name
+    repositoryName: appName
     runtimePrincipalId: ids[i].outputs.runtimePrincipalId
     deployPrincipalId: ids[i].outputs.deployPrincipalId
     // Images are built once, in dev, and promoted; only dev may push.
