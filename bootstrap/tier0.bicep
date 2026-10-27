@@ -77,9 +77,8 @@ resource caeJoinerRole 'Microsoft.Authorization/roleDefinitions@2022-04-01' = {
 
 // For identities that run on pull requests, i.e. on unreviewed code: enough to
 // preview a deployment, nothing that reads data. Reader would also allow
-// querying Log Analytics and pulling images.
-// TODO(verify in test): what-if with --validation-level ProviderNoRbac works
-// with exactly this set.
+// querying Log Analytics and pulling images. Enough for what-if with
+// --validation-level ProviderNoRbac (verified in the test environment).
 resource whatIfReaderRole 'Microsoft.Authorization/roleDefinitions@2022-04-01' = {
   name: whatIfReaderRoleId
   properties: {
