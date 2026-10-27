@@ -27,10 +27,6 @@ permissions:
   id-token: write
   contents: read
 
-concurrency:
-  group: vend
-  cancel-in-progress: false
-
 jobs:
   validate:
     if: github.event_name == 'pull_request'
@@ -80,6 +76,13 @@ jobs:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment: vending # required reviewers on this environment
+    # One vend at a time, so two runs never touch the same resources. On this
+    # job only: pull request validation must not wait behind a vend that is
+    # waiting for approval. A concurrency group keeps at most one pending run,
+    # so start several projects one after another, not all at once.
+    concurrency:
+      group: vend
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
