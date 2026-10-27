@@ -93,11 +93,11 @@ GitHub, as org owner:
    it on the org, generate a private key.
 2. In this repo: environment `vending` (required reviewers: the platform team,
    deployment branches: `main`) with variables `VENDING_CLIENT_ID`,
-   `VENDING_APP_ID` and secret `VENDING_APP_PRIVATE_KEY`; repo variables
+   `VENDING_APP_CLIENT_ID` and secret `VENDING_APP_PRIVATE_KEY`; repo variables
    `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`.
 3. Create the validation GitHub App (Members: read, Metadata: read), install it
    on all repositories, generate a key; in this repo: repo variable
-   `VALIDATE_APP_ID`, repo secret `VALIDATE_APP_PRIVATE_KEY`.
+   `VALIDATE_APP_CLIENT_ID`, repo secret `VALIDATE_APP_PRIVATE_KEY`.
 4. In platform-shared: repo variables `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`,
    `AZURE_PLAN_CLIENT_ID` (= `platformPlanClientId`).
 5. Rulesets on `main` of every repo: pull request required, checks must pass.
@@ -185,7 +185,7 @@ and its Azure identities second.
 
 A second, read-only GitHub App (`Members: read`, `Metadata: read`) lets pull
 requests check a record against GitHub before it is merged. Its key is a repo
-secret (`VALIDATE_APP_PRIVATE_KEY`, with variable `VALIDATE_APP_ID`), so it is
+secret (`VALIDATE_APP_PRIVATE_KEY`, with variable `VALIDATE_APP_CLIENT_ID`), so it is
 available to pull request runs: a leaked key only reveals which teams and repos
 exist. The vending App's key, which can write, stays in the `vending`
 environment and never reaches pull requests.
