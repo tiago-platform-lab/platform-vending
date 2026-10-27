@@ -152,8 +152,7 @@ request of platform-shared presents the same OIDC subject, so one identity per
 department would not isolate anything.
 
 The roles `id-vending` may assign: Contributor, Managed Identity Operator,
-Container Registry Repository Reader and Writer (plus AcrPull and AcrPush while a
-registry is still in legacy mode), Key Vault Secrets User, Storage Blob Data
+Container Registry Repository Reader and Writer, Key Vault Secrets User, Storage Blob Data
 Contributor, Storage Queue Data Contributor, Container Apps Environment Joiner,
 What-If Reader. Never
 Owner, User Access Administrator or RBAC Administrator, so nothing it creates can
