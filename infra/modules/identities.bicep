@@ -5,8 +5,9 @@
 //   deploy   GitHub `environment: <env>` logs in as this. Its rights on the
 //            app's resource group are granted by env-access.bicep.
 //   plan     GitHub pull requests log in as this. Read-only. Used for what-if.
-//   runtime  The app runs as this. Gets AcrPull from registry-access.bicep and
-//            its data roles from env-access.bicep.
+//   runtime  The app runs as this. Gets Repository Reader on its own registry
+//            repository from registry-access.bicep and its data roles from
+//            env-access.bicep.
 
 targetScope = 'resourceGroup'
 
