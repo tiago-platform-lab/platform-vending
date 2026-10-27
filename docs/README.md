@@ -16,6 +16,7 @@ step. No secrets are stored for Azure: pipelines log in with OIDC.
    - [Department and platform identities](#33-department-and-platform-identities)
    - [Custom roles](#34-custom-roles)
    - [How a pipeline logs in (OIDC)](#35-how-a-pipeline-logs-in-oidc)
+   - [Registry access: RBAC plus ABAC](#36-registry-access-rbac-plus-abac)
 4. [GitHub Apps](#4-github-apps)
 5. [From a change to production](#5-from-a-change-to-production)
 6. [Vending a new app](#6-vending-a-new-app)
@@ -200,6 +201,41 @@ repeats a complete login with a fresh GitHub token, with a growing delay, for up
 to 10 minutes, until the identity can use the subscription. This matters for the
 first deploy, started seconds after vending creates the roles.
 
+### 3.6 Registry access: RBAC plus ABAC
+
+Each department has one registry, `cr<dept>shared`, and every app of the
+department keeps its images there, in a repository named after the app
+(`cr<dept>shared/<app>`).
+
+RBAC alone cannot keep those apps apart. A role is assigned on a scope, and the
+smallest scope Azure offers for a registry is the whole registry: `AcrPush` on
+`cr<dept>shared` lets an app push to every repository in it. A compromised
+pipeline of one app could then overwrite another app's image, and the next
+deploy or restart of that other app would run the attacker's code under that
+app's identity, with access to its Key Vault and data. With `AcrPull`, any app
+could read every other app's images, including whatever got baked into them.
+
+ABAC (attribute-based access control) adds a condition to a role assignment.
+The registry runs in **RBAC Registry + ABAC Repository Permissions** mode
+(`roleAssignmentMode: AbacRepositoryPermissions`, set in platform-shared), and
+vending gives each app:
+
+| Identity | Role | Condition |
+|---|---|---|
+| `id-<app>-dev-deploy` | Container Registry Repository Writer | repository = `<app>` |
+| `id-<app>-<env>-runtime` | Container Registry Repository Reader | repository = `<app>` |
+
+The role is still assigned on the registry (RBAC decides *what* the identity can
+do); the condition decides *where*: every read or write of image content or
+metadata is allowed only when the repository name is the app's own. In this mode
+the registry ignores `AcrPull` and `AcrPush`, so an old or misplaced assignment
+cannot reopen access to the other repositories.
+
+The result: one registry per department (one bill, one place to scan), with each
+app isolated as if it had its own. The repository roles are in id-vending's list
+of assignable roles; the conditions are written by vending
+(`infra/modules/registry-access.bicep`), never by the app.
+
 ## 4. GitHub Apps
 
 A GitHub App is a machine identity on the GitHub side, like a managed identity on
@@ -229,6 +265,7 @@ rights, and stops working when the person leaves.
 |---|---|---|---|
 | `ci.yml` | Every PR and push | No Azure access | Tests, Bicep lint and build, image build |
 | `infra-plan.yml` | PRs touching `infra/`, the workflow or `.github/actions/` | Plan identity | What-if for dev and prod |
+| `blast-radius.yml` | Every PR | Plan identity (what-if JSON), then no Azure access | Rules plus an LLM rate the PR's risk; one comment and a `risk:*` label |
 | `deploy-dev.yml` | Push to `main` | Dev deploy identity | Builds `<app>:<sha>` once, pushes it, deploys `infra/main.bicep` to dev |
 | `release.yml` | Tag `vX.Y.Z` (a published release) | Dev identity, then prod deploy identity | `tag-image` adds the version to the image dev already runs; after approval, `prod` deploys `<app>:vX.Y.Z` |
 
@@ -256,6 +293,16 @@ Principles:
 ## 6. Vending a new app
 
 ![Vending a new app](images/05-vending-flow.png)
+
+The request is a pull request adding `projects/<app>.yaml`. The `new-app` skill
+of [platform-skills](https://github.com/tiago-platform-lab/platform-skills)
+(Claude Code, opencode) opens it for the person and follows it until the app is
+live in dev; the **New project** issue form is the manual alternative.
+
+After the merge, a `plan` job works out which records were added or changed. If
+there are none (for example a push that only deletes a record), the run ends
+there, without asking for approval. Vend runs one at a time: GitHub keeps only one
+run waiting, so start several projects one after another.
 
 Validation happens twice with the same script (`scripts/validate-project.sh`):
 
@@ -314,7 +361,10 @@ logged in with `az login` (use `--use-device-code` in WSL).
      repo secret `VALIDATE_APP_PRIVATE_KEY`.
 5. platform-shared: repo variables `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`,
    `AZURE_PLAN_CLIENT_ID` (= `platformPlanClientId`).
-6. Rulesets on `main` of every repo: pull request required, checks green, code
+6. Org custom properties `owner` and `cost-centre` (text) and `vended`
+   (true/false). Vending sets them on every app repo; without them it only
+   warns.
+7. Rulesets on `main` of every repo: pull request required, checks green, code
    owner review.
 
 ### B. Adding a department
@@ -354,7 +404,8 @@ Phase 1 (today): steps 1, 2 and 4 by hand. Phase 2 moves them into vending.
 
 ### C. Adding an app
 
-1. Pull request in platform-vending adding `projects/<app>.yaml`:
+1. Pull request in platform-vending adding `projects/<app>.yaml` (the `new-app`
+   skill writes and opens it; see [section 6](#6-vending-a-new-app)):
    ```yaml
    name: my-app                    # 3-16 chars; repo and Azure names
    department: aidelivery          # a key under departments: in platform.yaml
@@ -377,7 +428,7 @@ Phase 1 (today): steps 1, 2 and 4 by hand. Phase 2 moves them into vending.
 | A pipeline widens its own access | No pipeline identity can grant roles except `id-vending`, from a closed list; identities live outside the scopes they write to |
 | One department touches another | Department identities are Contributor on their own RG only; the Joiner role is assigned per environment; CODEOWNERS and per-department environments in platform-shared |
 | A compromised app destroys infrastructure | The runtime identity only has data roles on its own RG |
-| One app reads or replaces another app's images | Registries run in ABAC mode: each app's identities get the repository roles with a condition on their own repository (`<registry>/<app>`); AcrPull/AcrPush are not honoured |
+| One app reads or replaces another app's images | Registries run in ABAC mode: each app's identities get the repository roles with a condition on their own repository (`<registry>/<app>`); AcrPull/AcrPush are not honoured ([section 3.6](#36-registry-access-rbac-plus-abac)) |
 | A compromised third-party action steals a token | Every action pinned by commit SHA; Dependabot proposes updates |
 | Someone changes who an identity trusts | Email alert on any federated credential write or delete |
 | A repo is recreated with the same name to inherit trust | OIDC subjects with numeric org and repo IDs |
@@ -412,11 +463,10 @@ Accepted risks (test setup):
 
 - **Departments through vending (phase 2):** `departments/<dept>.yaml` running
   `department.bicep` and configuring the platform-shared environments.
-- **Template updates do not reach existing apps.** Move the workflows to
-  reusable workflows in a central repo, or adopt a scaffolding tool with updates
-  (Copier).
-- **Rulesets on `main`** of every repo, so red checks and missing reviews block
-  merges.
+- **Template updates do not reach existing apps by themselves.** Each app keeps
+  its own copy of the template (no reusable workflows), so a change reaches an app
+  through a pull request in that app. Planned: a `sync-template` skill that opens
+  those pull requests.
 - **Retiring an app or department** is not automated.
 - **Entra app registrations** (user sign-in, Graph or Dynamics APIs) are outside
   Bicep: they need Graph permissions no pipeline has.

@@ -124,7 +124,7 @@ jq -n --argjson team "$team_id" "{name: \"release-tags-creators\", target: \"tag
         conditions: $tags, rules: [{type: \"creation\"}]}" |
   ruleset release-tags-creators
 
-# 6. Custom properties, defined once at org level (see README "Bootstrap").
+# 6. Custom properties, defined once at org level (see README "Tier 0").
 #    Optional: an org without them defined (e.g. a test org) only gets a warning.
 jq -n \
   --arg owner "$(yq '.tags.owner' "$project")" \
