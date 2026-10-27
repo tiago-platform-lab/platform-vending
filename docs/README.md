@@ -310,8 +310,8 @@ logged in with `az login` (use `--use-device-code` in WSL).
 4. platform-vending:
    - environment `vending`: required reviewers = platform team, deployment
      branches `main`; variables `VENDING_CLIENT_ID` (= `vendingClientId`),
-     `VENDING_APP_ID`; secret `VENDING_APP_PRIVATE_KEY`;
-   - repo variables `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `VALIDATE_APP_ID`;
+     `VENDING_APP_CLIENT_ID`; secret `VENDING_APP_PRIVATE_KEY`;
+   - repo variables `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `VALIDATE_APP_CLIENT_ID`;
      repo secret `VALIDATE_APP_PRIVATE_KEY`.
 5. platform-shared: repo variables `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`,
    `AZURE_PLAN_CLIENT_ID` (= `platformPlanClientId`).
