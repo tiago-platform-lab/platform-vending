@@ -102,6 +102,8 @@ GitHub, as org owner:
    `AZURE_PLAN_CLIENT_ID` (= `platformPlanClientId`).
 5. Rulesets on `main` of every repo: pull request required, checks must pass.
 6. Mark `tmpl-webapp-bicep` as a template repository.
+7. Org custom properties `owner`, `cost-centre` (text) and `vended` (true/false),
+   set by vending on every app repo (without them it only warns).
 
 ## Adding a department (phase 1)
 
@@ -123,14 +125,21 @@ runs `department.bicep` and configures the platform-shared environments.
 
 ## Vending a project
 
-1. A team opens an issue with the **New project** form.
-2. The platform team opens a pull request adding `projects/<name>.yaml`. The
+1. A team asks for the app with the `new-app` skill of
+   [platform-skills](https://github.com/tiago-platform-lab/platform-skills), which
+   opens the pull request of step 2 and follows it until the app is live in dev.
+   Without the skill, the team opens an issue with the **New project** form.
+2. A pull request adds `projects/<name>.yaml` (from the skill, or opened by the
+   platform team from the issue). The
    pull request checks the record (`scripts/validate-project.sh`), online too for
    the records it changes (read-only validation App: teams exist, repo free); right
    before vending, the same script checks online that the teams exist and that
    the repo is free (or was made from the template), before anything is created.
    Reviewing it is the approval.
-3. On merge, `vend-project.yml` waits for approval on the `vending` environment,
+3. On merge, a `plan` job lists the added or changed records; with none, the run
+   ends without asking for approval. Otherwise `vend-project.yml` waits for
+   approval on the `vending` environment (one vend at a time; start several
+   projects one after another),
    runs Preflight (the same checks, online), then:
    `scripts/create-repo.sh` (repo from the template, and its OIDC subject prefix),
    `infra/project.bicep` (Azure: RGs, identities with that prefix, roles) and
@@ -161,14 +170,16 @@ with `projects/<name>.yaml`.
 - Registry access is per repository: the department registry runs in ABAC mode
   and each app's identities get Container Registry Repository Reader/Writer with
   a condition on their own repository, so an app cannot read or overwrite another
-  app's images.
+  app's images. Plain RBAC cannot do this: its smallest scope is the whole
+  registry. Details: [docs, section 3.6](docs/README.md#36-registry-access-rbac-plus-abac).
 
 ## Not handled yet
 
 - Departments through vending (phase 2): today `department.bicep` and the
   platform-shared environments are done by hand.
 - Retiring a project or a department (deleting a record does nothing).
-- Template updates reaching already vended repos.
+- Template updates reaching already vended repos (each app has its own copy;
+  planned: a `sync-template` skill that opens the pull requests).
 
 ## OIDC subjects
 
